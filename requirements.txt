@@ -1,0 +1,14 @@
+Flask==0.10.1
+Jinja2==2.7
+MarkupSafe==0.18
+PIL==1.1.7
+Werkzeug==0.9.1
+itsdangerous==0.22
+lxml==3.2.1
+mitmproxy==0.9.1
+mock==1.0.1
+netlib==0.9.1
+pyOpenSSL==0.13
+pyasn1==0.1.7
+urwid==1.1.1
+wsgiref==0.1.2
