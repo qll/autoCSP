@@ -10,6 +10,8 @@ from libmproxy import proxy
 
 
 def main():
+    # change cwd to the directory of this file
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     paths = {k: os.path.expanduser(p) for k, p in settings.PATHS.items()}
     load_interceptors(paths['INTERCEPTORS'], settings.INTERCEPTORS)
     load_views(paths['VIEWS'])

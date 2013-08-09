@@ -12,15 +12,11 @@ status_codes = {
 http_versions = ((1, 1), (1, 0))
 
 
-class HttpError(Exception):
+class InvalidStatusCodeError(Exception):
     pass
 
 
-class InvalidStatusCodeError(HttpError):
-    pass
-
-
-class InvalidHttpVersionError(HttpError):
+class InvalidHttpVersionError(Exception):
     pass
 
 

@@ -1,4 +1,4 @@
-from lib.webinterface import path, make_response
+from lib.webinterface import make_response, path
 
 
 @path('/')

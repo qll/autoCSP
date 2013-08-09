@@ -14,9 +14,19 @@ env = jinja2.Environment(loader=jinja2.PackageLoader('webinterface',
                                                      'templates'))
 
 
+class HttpError(Exception):
+    def build_response(self):
+        return Response(content=self.message, status_code=self.status_code)
+
+
+class Http404Error(HttpError):
+    def __init__(self, msg=''):
+        self.status_code = 404
+        HttpError.__init__(self, msg if msg else '404 - Not Found')
+
+
 class path(object):
     """ Path decorator. Maps a function to a URI RegEx. """
-
     def __init__(self, regex):
         self.path = re.compile('^%s$' % regex)
 
@@ -41,6 +51,9 @@ def call_view(req, path):
     for regex, function in views.items():
         match = regex.match(path)
         if match:
-            response = wrap_response(function(req, *match.groups()))
+            try:
+                response = wrap_response(function(req, *match.groups()))
+            except HttpError as e:
+                response = e.build_response()
             break
     return response
