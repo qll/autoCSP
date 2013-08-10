@@ -3,6 +3,7 @@ import re
 import jinja2
 
 from lib.http import Response
+from settings import WEBINTERFACE_URI
 
 
 # closurized dict mapping RegExes to functions
@@ -10,13 +11,27 @@ views = {}
 
 
 # closurized Jinja2 Environment
-env = jinja2.Environment(loader=jinja2.PackageLoader('webinterface',
-                                                     'templates'))
+env = jinja2.Environment(
+    loader=jinja2.PackageLoader('webinterface', 'templates'),
+    autoescape=True)
+env.globals['base_url'] = '/%s/' % WEBINTERFACE_URI
 
 
 class HttpError(Exception):
     def build_response(self):
         return Response(content=self.message, status_code=self.status_code)
+
+
+class Http401Error(HttpError):
+    """ If client has to authenticate itsself to see the website. """
+    def __init__(self, realm, msg=''):
+        self.realm = realm
+        HttpError.__init__(self, msg if msg else '401 - Unauthorized')
+
+    def build_response(self):
+        r = Response(content=self.message, status_code=401)
+        r.set_header('WWW-Authenticate', 'Basic realm="%s"' % self.realm)
+        return r
 
 
 class Http404Error(HttpError):

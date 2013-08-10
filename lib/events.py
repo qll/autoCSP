@@ -1,6 +1,8 @@
 """ Event system. Able to call multiple event handlers on one event. """
 from libmproxy import controller
 
+from settings import LOCKED_MODE
+
 
 # closurized events dictionary
 events = {}
@@ -13,11 +15,13 @@ class EventPropagationStop(Exception):
 class subscribe(object):
     """ Event subscription decorator. """
 
-    def __init__(self, event):
+    def __init__(self, event, enable_when_locked=True):
         self.event = event
+        self.enable_when_locked = enable_when_locked
 
     def __call__(self, function):
-        events.setdefault(self.event, []).append(function)
+        if self.enable_when_locked or not LOCKED_MODE:
+            events.setdefault(self.event, []).append(function)
         return function
 
 
