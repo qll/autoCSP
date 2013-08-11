@@ -3,13 +3,27 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>autoCSP - {% block title %}{% endblock %}</title>
 <link rel="stylesheet" href="{{ base_url }}static/style.css">
-<header>
-    <h1><a href="{{ base_url }}">autoCSP</a></h1>
-    <nav>
-        <ul>
-            <li><a href="{{ base_url }}export/">Export</a></li>
-            <li></li>
-        </ul>
-    </nav>
-</header>
-test
+<div id="container">
+    <header>
+        <h1><a href="{{ base_url }}">autoCSP</a></h1>
+        <nav>
+            <ul>
+                <li><a href="{{ base_url }}export/">Export</a></li>
+                <li></li>
+            </ul>
+        </nav>
+    </header>
+    <div id="content">
+        <section>
+            <h3>Box</h3>
+            <div>
+                text
+            </div>
+        </section>
+    </div>
+    <footer>
+        <div>
+            autoCSP - CSP-injecting reverse HTTP proxy
+        </div>
+    </footer>
+</div>

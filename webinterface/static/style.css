@@ -2,8 +2,13 @@
     margin: 0;
     padding: 0;
 }
+html, body {
+    height: 100%;
+    min-height: 100%;
+}
 body {
     font-family: Verdana, Arial, sans;
+    color: 222;
 }
 img {
     border: 0;
@@ -17,7 +22,7 @@ header {
     background: linear-gradient(to bottom, #ffffff 0%, #ebe5df 100%);
 }
 h1 {
-    border-top: 4px solid #000;
+    border-top: 4px solid #222;
     font-size: 50px;
     padding: 8px 10px;
 }
@@ -36,7 +41,7 @@ nav {
 }
 nav ul {
     list-style-type: none;
-    border-top: 4px solid #000;
+    border-top: 4px solid #222;
     background: #fff;
 }
 nav ul li {
@@ -51,14 +56,51 @@ nav a {
     display: block;
     margin-top: -4px;
     background: #fff;
-    border-top: 4px solid #000;
+    border-top: 4px solid #222;
     padding: 10px 11px;
     font-size: 22px;
     text-decoration: none;
-    color: #000;
+    color: #222;
 }
 nav a:hover {
     border-top: 4px solid #ff3600;
     background: #fad900;
     background: linear-gradient(to bottom, #fac400 0%, #fad900 65%, #fac400 66%, #f7a500 100%);
+}
+section {
+    border: 2px solid #ebe5df;
+}
+section h3 {
+    background: #ebe5df;
+    background: linear-gradient(to bottom, #ffffff 0%, #ebe5df 100%);
+    margin: 1px;
+    color: #3f3029;
+    font-size: 18px;
+    font-weight: normal;
+    padding: 3px 5px;
+}
+section div {
+    border-top: 2px solid #ebe5df;
+    padding: 5px 6px;
+}
+footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #3f3029;
+    color: #fff;
+    font-size: 12px;
+    text-align: right;
+}
+footer div {
+    padding: 5px 10px;
+}
+
+#container {
+    min-height: 100%;
+    position: relative;
+}
+#content {
+    padding:20px;
 }

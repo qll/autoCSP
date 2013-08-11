@@ -37,7 +37,8 @@ class Response(HttpMessage):
         self.status_code = status_code
         self.http_version = http_version
         self.headers = {'Content-Type': 'text/html; charset=UTF-8',
-                        'X-Frame-Options': 'DENY'}
+                        'X-Frame-Options': 'DENY',  # prevent framing
+                        'X-XSS-Protection': '1; mode=block'}  # XSS blacklist
         self.cert = None
 
     def set_header(self, field, value):
