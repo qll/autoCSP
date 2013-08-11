@@ -1,4 +1,5 @@
-""" Event system. Able to call multiple event handlers on one event. """
+""" Event system. Able to call multiple event handlers on one event.
+    Currently used events: request, response, db_init. """
 from libmproxy import controller
 
 from settings import LOCKED_MODE
@@ -40,8 +41,14 @@ class EventController(controller.Master):
         call(event, msg)
 
     def handle(self, msg):
-        self.call(msg.__class__.__name__.lower(), msg)
-        msg.reply()
+        """ Handles internal controller event and distributes it to all
+            subscribed listeners. """
+        try:
+            self.call(msg.__class__.__name__.lower(), msg)
+            msg.reply()
+        except Exception as e:
+            # TODO(qll): implement logging
+            print(e)
 
 
 def call(event, *args):
