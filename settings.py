@@ -15,6 +15,7 @@ WEBINTERFACE_AUTH = None
 # enabled interceptors (order matters)
 INTERCEPTORS = (
     'webinterface',
+    'csp',
 )
 
 PATHS = {
