@@ -4,6 +4,8 @@
 import os
 
 import lib.events
+import lib.globals
+import lib.sqlite
 import settings
 
 from libmproxy import proxy
@@ -15,11 +17,24 @@ def main():
     paths = {k: os.path.expanduser(p) for k, p in settings.PATHS.items()}
     load_interceptors(paths['INTERCEPTORS'], settings.INTERCEPTORS)
     load_views(paths['VIEWS'])
+    connect_to_db(paths['DATABASE'])
     config = proxy.ProxyConfig(cacert=paths['CACERT'],
                                reverse_proxy=settings.REVERSE_PROXY)
     server = proxy.ProxyServer(config, 8080)
     controller = lib.events.EventController(server)
-    controller.run()
+    try:
+        controller.run()
+    except KeyboardInterrupt:
+        controller.shutdown()
+        lib.globals.Globals()['db'].close()
+
+
+def connect_to_db(path):
+    """ Connects to the sqlite3 database and initializes it if needed. """
+    database_existed = os.path.isfile(path)
+    lib.globals.Globals()['db'] = lib.sqlite.ThreadedDatabase(path)
+    if not database_existed:
+        lib.events.call('db_init')
 
 
 def load_module(path):

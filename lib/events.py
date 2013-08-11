@@ -33,22 +33,21 @@ class EventController(controller.Master):
         controller.Master.__init__(self, server)
 
     def run(self):
-        try:
-            return controller.Master.run(self)
-        except KeyboardInterrupt:
-            self.shutdown()
+        return controller.Master.run(self)
 
     def call(self, event, msg):
         """ Calls event with message parameter. """
-        try:
-            for function in events.get(event, []):
-                r = function(msg)
-                if r:
-                    msg = r
-        except EventPropagationStop:
-            pass
-        return msg
+        call(event, msg)
 
     def handle(self, msg):
-        msg = self.call(msg.__class__.__name__.lower(), msg)
+        self.call(msg.__class__.__name__.lower(), msg)
         msg.reply()
+
+
+def call(event, *args):
+    """ Calls events with arbitrary parameters. """
+    try:
+        for function in events.get(event, []):
+            function(*args)
+    except EventPropagationStop:
+        pass

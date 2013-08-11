@@ -18,6 +18,8 @@ INTERCEPTORS = (
 )
 
 PATHS = {
+    # path to sqlite3 database (does not have to exist)
+    'DATABASE': 'proxy.sqlite',
     # path to all interceptor functions (w/ trailing slash)
     'INTERCEPTORS': 'interceptors/',
     # path to all View functions (w/ trailing slash)
