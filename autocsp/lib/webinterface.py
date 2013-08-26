@@ -50,9 +50,14 @@ class path(object):
         return function
 
 
+def render_template(template, **kwargs):
+    """ Wrapper for env.get_template. """
+    return env.get_template(template).render(**kwargs)
+
+
 def make_response(template, **kwargs):
     """ Makes a lib.http.Response from a template and its arguments. """
-    return Response(content=env.get_template(template).render(**kwargs))
+    return Response(content=render_template(template, **kwargs))
 
 
 def wrap_response(val):

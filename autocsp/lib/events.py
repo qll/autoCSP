@@ -21,7 +21,8 @@ class subscribe(object):
         self.enable_when_locked = enable_when_locked
 
     def __call__(self, function):
-        if self.enable_when_locked or not LOCKED_MODE:
+        if (self.enable_when_locked or not LOCKED_MODE) and (not
+           (self.event in events and function in events[self.event])):
             events.setdefault(self.event, []).append(function)
         return function
 
