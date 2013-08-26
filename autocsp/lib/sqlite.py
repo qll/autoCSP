@@ -11,6 +11,7 @@ class ThreadedDatabase(threading.Thread):
         super(ThreadedDatabase, self).__init__()
         self.path = path
         self.requests = Queue()
+        self.lasterr = None
         self.start()
 
     def run(self):
@@ -20,7 +21,11 @@ class ThreadedDatabase(threading.Thread):
             req, arg, res = self.requests.get()
             if req == '--close--':
                 break
-            cursor.execute(req, arg)
+            try:
+                cursor.execute(req, arg)
+            except sqlite3.IntegrityError as e:
+                self.lasterr = e
+            connection.commit()
             if res:
                 for record in cursor:
                     res.put(record)

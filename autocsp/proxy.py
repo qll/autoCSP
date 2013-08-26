@@ -81,9 +81,10 @@ def write_pid_file(path):
 def connect_to_db(path):
     """ Connects to the sqlite3 database and initializes it if needed. """
     database_existed = os.path.isfile(path)
-    lib.globals.Globals()['db'] = lib.sqlite.ThreadedDatabase(path)
+    db = lib.sqlite.ThreadedDatabase(path)
+    lib.globals.Globals()['db'] = db
     if not database_existed:
-        lib.events.call('db_init')
+        lib.events.call('db_init', db)
 
 
 def load_module(path):

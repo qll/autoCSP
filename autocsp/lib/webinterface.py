@@ -22,6 +22,13 @@ class HttpError(Exception):
         return Response(content=self.message, status_code=self.status_code)
 
 
+class Http400Error(HttpError):
+    """ If the client has sent a bad request. """
+    def __init__(self, msg=''):
+        self.status_code = 400
+        HttpError.__init__(self, msg if msg else '400 - Bad Request')
+
+
 class Http401Error(HttpError):
     """ If client has to authenticate itsself to see the website. """
     def __init__(self, realm, msg=''):

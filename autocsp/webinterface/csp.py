@@ -1,7 +1,11 @@
+import json
+import urllib
+
+import lib.globals
 import lib.http
 import webinterface.static
 
-from lib.webinterface import path, render_template
+from lib.webinterface import path, render_template, Http400Error
 from settings import WEBINTERFACE_URI
 
 
@@ -19,5 +23,21 @@ def serve_policy(req):
 @path('/_/policy')
 def report_policy(req):
     ''' CSP policy.js sink. Writes all gathered information to database. '''
-    print(req.content)
+    if '&' in req.content:
+        data = {}
+        for component in req.content.split('&'):
+            if '=' in component:
+                p, v = component.split('=', 1)
+                data[urllib.unquote(p)] = urllib.unquote(v)
+        if {'sources', 'uri'} > set(data.keys()):
+            raise Http400Error()
+        data['sources'] = json.loads(data['sources'])
+        db = lib.globals.Globals()['db']
+        for elt in ('script', 'img'):
+            if elt in data['sources'] and isinstance(data['sources'][elt],
+                                                     list):
+                for insert in data['sources'][elt]:
+                    # XXX: possible performance problem
+                    db.execute('INSERT INTO policy VALUES (NULL, ?, ?, ?)',
+                               (data['uri'], elt + '-src', insert))
     return ''

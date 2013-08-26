@@ -14,14 +14,14 @@ def is_webinterface(path):
     return True if len(path) and path[0] == WEBINTERFACE_URI else False
 
 
-@subscribe('response', enable_when_locked=False)
+@subscribe('response', mode='learning')
 def ignore_webinterface(response):
     if is_webinterface(response.request.get_path_components()):
         raise EventPropagationStop()
 
 
 if WEBINTERFACE_AUTH:
-    @subscribe('request', enable_when_locked=False)
+    @subscribe('request', mode='learning')
     def handle_webinterface_auth(request):
         path = request.get_path_components()
         if is_webinterface(path):
@@ -34,7 +34,7 @@ if WEBINTERFACE_AUTH:
                 raise EventPropagationStop()
 
 
-@subscribe('request', enable_when_locked=False)
+@subscribe('request', mode='learning')
 def handle_webinterface(request):
     path = request.get_path_components()
     if is_webinterface(path):

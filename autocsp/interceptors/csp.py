@@ -1,7 +1,19 @@
 import re
 
+import lib.globals
+
 from lib.events import subscribe
 from settings import WEBINTERFACE_URI
+
+
+policy_rules = ('script-src', 'img-src')
+
+
+@subscribe('db_init')
+def create_tables(db):
+    db.execute('CREATE TABLE policy (id INTEGER PRIMARY KEY AUTOINCREMENT, '
+               'internal_uri TEXT, directive TEXT, uri TEXT, '
+               'UNIQUE (internal_uri, directive, uri))')
 
 
 @subscribe('response')
@@ -26,7 +38,7 @@ def add_report_csp_header(resp):
     resp.headers['Content-Security-Policy-Report-Only'] = policy
 
 
-@subscribe('response')
+@subscribe('response', mode='learning')
 def inject_script(resp):
     """ Injects a script into every served HTML page (policy generation). """
     if 'Content-Type' in resp.headers:
@@ -46,3 +58,17 @@ def inject_script(resp):
             # if all fails just prepend to content
             if inj not in resp.content:
                 resp.content = inj + resp.content
+
+
+@subscribe('response', mode='locked')
+def inject_csp(resp):
+    """ Injects a Content Security Policy to protect the site. """
+    db = lib.globals.Globals()['db']
+    rules = {}
+    for directive, src in db.select(('SELECT directive, uri FROM policy WHERE '
+                                     'internal_uri = ?'), (resp.request.path,)):
+        rules.setdefault(directive, []).append(src)
+    policy = ['%s %s' % (d, ' '.join(rules.setdefault(d, ["'none'"])))
+              for d in policy_rules]
+    # TODO(qll): FireFox does not know file path specific CSP directives, yet...
+    resp.headers['Content-Security-Policy'] = ['; '.join(policy)]

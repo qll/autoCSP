@@ -1,5 +1,8 @@
 """ Event system. Able to call multiple event handlers on one event.
     Currently used events: request, response, db_init. """
+import sys
+import traceback
+
 from libmproxy import controller
 
 from settings import LOCKED_MODE
@@ -16,13 +19,19 @@ class EventPropagationStop(Exception):
 class subscribe(object):
     """ Event subscription decorator. """
 
-    def __init__(self, event, enable_when_locked=True):
+    def __init__(self, event, mode='*'):
         self.event = event
-        self.enable_when_locked = enable_when_locked
+        modes = ('*', 'locked', 'learning')
+        if mode not in modes:
+            raise ValueError('Event mode can only be one of the following: %s'
+                             % modes)
+        learn = True if mode in ('*', 'learning') else False
+        locked = True if mode in ('*', 'locked') else False
+        self.enabled = (LOCKED_MODE and locked) or (not LOCKED_MODE and learn)
 
     def __call__(self, function):
-        if (self.enable_when_locked or not LOCKED_MODE) and (not
-           (self.event in events and function in events[self.event])):
+        if (self.enabled and (not (self.event in events
+                                   and function in events[self.event]))):
             events.setdefault(self.event, []).append(function)
         return function
 
@@ -47,9 +56,13 @@ class EventController(controller.Master):
         try:
             self.call(msg.__class__.__name__.lower(), msg)
             msg.reply()
-        except Exception as e:
+        except Exception:
             # TODO(qll): implement logging
-            print(e)
+            _, e, tb = sys.exc_info()
+            print('Error: %s' % e)
+            print('Traceback:')
+            traceback.print_tb(tb)
+            del tb
 
 
 def call(event, *args):

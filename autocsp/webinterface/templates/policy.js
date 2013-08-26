@@ -31,6 +31,21 @@ $.Map.prototype.get_object = function() {
 };
 
 
+$.Set = function(values) {
+    var values = values || [];
+    this.values = {};
+    for (var i = 0; i < values.length; i++) {
+        this.values[values[i]] = true;
+    }
+};
+$.Set.prototype.add = function(value) {
+    this.values[value] = true;
+};
+$.Set.prototype.get_array = function() {
+    return Object.keys(this.values);
+};
+
+
 $.net = {};
 $.net.Request = function(url, cb) {
     cb = cb || function () {};
@@ -64,19 +79,21 @@ $.net.post = function(url, data, cb) {
 
 
 var gather_uris = function(nodes, attribute) {
-    var uris = {};
+    var uris = new $.Set();
     for (var i = 0; i < nodes.length; i++) {
         var uri = nodes[i][attribute];
         if (uri) {
-            uris[uri] = (uri in uris) ? uris[uri] + 1 : 1;
+            uris.add(uri);
         }
     }
-    return uris;
+    return uris.get_array();
 };
 
 
 // variable definitions
 var report_uri = '{{ report_uri }}';
+var self_uri = location.protocol + '//' + location.hostname +
+               (location.port ? ':' + location.port : '')
 
 
 window.addEventListener('load', function() {
@@ -86,11 +103,12 @@ window.addEventListener('load', function() {
         'img': 'src'
     });
     visit.foreach(function(key, value) {
-        sources[key] = gather_uris(document.querySelectorAll(key), value);
+        var uris = gather_uris(document.querySelectorAll(key), value);
+        if (uris.length) {
+            sources[key] = uris;
+        }
     });
-    var uri = location.protocol + '//' + location.hostname +
-              (location.port ? ':' + location.port : '') + location.pathname +
-              location.search;
+    var uri = location.pathname + location.search;
     var postdata = new $.Map({'uri': uri, 'sources': JSON.stringify(sources)})
     $.net.post(report_uri, postdata);
 });
