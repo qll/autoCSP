@@ -12,12 +12,23 @@
 var $ = {};
 
 
+// shortcuts
+$.to_absolute = function(uri) {
+    /** Makes an absolute URI from a relative one. */
+    var a = document.createElement('a');
+    a.href = uri;
+    return a.href;
+};
+
+
 $.Map = function(values) {
     /** Maps keys to values without the shenanigans of JavaScript. */
     this.values = values || {};
+    this.length = Object.keys(this.values).length;
 };
 $.Map.prototype.add = function(key, value) {
     this.values[key] = value;
+    this.length++;
 };
 $.Map.prototype.foreach = function(cb) {
     for (var key in this.values) {
@@ -39,6 +50,7 @@ $.Map.prototype.setdefault = function(key, default_val) {
     default_val = default_val || null;
     if (!this.has_key(key)) {
         this.values[key] = default_val;
+        this.length++;
     }
     return this.values[key];
 };
@@ -103,8 +115,8 @@ $.net.post = function(url, data, cb) {
 
 // variable definitions
 var report_uri = '{{ report_uri }}';
-//var self_uri = location.protocol + '//' + location.hostname +
-//               (location.port ? ':' + location.port : '')
+var self_uri = location.protocol + '//' + location.hostname +
+               (location.port ? ':' + location.port : '') + '/';
 
 
 // build a list of node types we want to visit
@@ -114,12 +126,23 @@ var visit = new $.Map({
         /** Retrieve all background images. */
         var bg = window.getComputedStyle(e, false).backgroundImage;
         var match = bg.match(/url\('?([^)]*[^']+)'?\)/);
-        return (match) ? match[1] : undefined;
+        return (match) ? match[1] : null;
     }}),
     'SCRIPT': new $.Map({'script-src': get_src}),
     'IMG': new $.Map({'img-src': get_src}),
+    'LINK': new $.Map({'img-src': function(e) {
+        /** Check if is icon and return href. */
+        if (e.getAttribute('rel') === 'icon') {
+            var uri = e.getAttribute('href');
+            if (uri) {
+                return $.to_absolute(uri);               
+            }
+        }
+        return null;
+    }}),
 });
 var gather_uris = function(nodes) {
+    /** Use visit list to find interesting nodes and extract source uris. */
     var sources = new $.Map();
     var node = null;
     var store_in_sources = function(directive, func) {
@@ -146,12 +169,11 @@ window.addEventListener('load', function() {
 
     var uri = location.pathname + location.search;
     var gather_and_post = function(nodes) {
-        var sources = gather_uris(nodes).valueOf();
-        if (!sources) {
+        var sources = gather_uris(nodes);
+        if (!sources.length) {
             return;
         }
-        var sources = JSON.stringify(sources);
-        console.log(sources);
+        var sources = JSON.stringify(sources.valueOf());
         var postdata = new $.Map({'uri': uri, 'sources': sources})
         $.net.post(report_uri, postdata);
     };
