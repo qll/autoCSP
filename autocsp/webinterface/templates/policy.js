@@ -21,13 +21,33 @@ $.Map.prototype.add = function(key, value) {
 };
 $.Map.prototype.foreach = function(cb) {
     for (var key in this.values) {
-        if (this.values.hasOwnProperty(key)) {
+        if (this.has_key(key)) {
             cb(key, this.values[key]);
         }
     }
 };
+$.Map.prototype.get = function(key) {
+    return this.values[key];
+};
 $.Map.prototype.get_object = function() {
     return this.values;
+};
+$.Map.prototype.has_key = function(key) {
+    return Object.prototype.hasOwnProperty.call(this.values, key);
+};
+$.Map.prototype.setdefault = function(key, default_val) {
+    default_val = default_val || null;
+    if (!this.has_key(key)) {
+        this.values[key] = default_val;
+    }
+    return this.values[key];
+};
+$.Map.prototype.valueOf = function() {
+    var internal = {};
+    this.foreach(function(key, value) {
+        internal[key] = value.valueOf();
+    });
+    return internal;
 };
 
 
@@ -43,6 +63,9 @@ $.Set.prototype.add = function(value) {
 };
 $.Set.prototype.get_array = function() {
     return Object.keys(this.values);
+};
+$.Set.prototype.valueOf = function() {
+    return this.get_array();
 };
 
 
@@ -96,20 +119,49 @@ var self_uri = location.protocol + '//' + location.hostname +
                (location.port ? ':' + location.port : '')
 
 
+// build a list of node types we want to visit
+var get_src = function(e) { return e.src; };
+var visit = new $.Map({
+    '*': new $.Map({'img-src': function(e) {
+        /** Retrieve all background images. */
+        var bg = window.getComputedStyle(e, false).backgroundImage;
+        var match = bg.match(/url\('?([^)]*[^']+)'?\)/);
+        return (match) ? match[1] : undefined;
+    }}),
+    'SCRIPT': new $.Map({'script-src': get_src}),
+    'IMG': new $.Map({'img-src': get_src}),
+});
+
+
 window.addEventListener('load', function() {
-    var sources = {};
-    var visit = new $.Map({
-        'script': 'src',
-        'img': 'src'
-    });
-    visit.foreach(function(key, value) {
-        var uris = gather_uris(document.querySelectorAll(key), value);
-        if (uris.length) {
-            sources[key] = uris;
+    // document.styleSheets[0].href
+
+    // all gathered sources
+    var sources = new $.Map();
+
+    // visit all nodes
+    var nodes = document.getElementsByTagName('*');
+    var node = null;
+    var store_in_sources = function(directive, func) {
+        var uri = func(node);
+        if (uri) {
+            sources.setdefault(directive, new $.Set()).add(uri);
         }
-    });
+    };
+    for (var i = 0; i < nodes.length; i++) {
+        if (nodes[i].tagName) {
+            node = nodes[i];
+            visit.get('*').foreach(store_in_sources);
+            if (visit.has_key(nodes[i].tagName)) {
+                visit.get(nodes[i].tagName).foreach(store_in_sources);
+            }
+        }
+    }
+
+    // create JSON string
+    var sources = JSON.stringify(sources.valueOf());
     var uri = location.pathname + location.search;
-    var postdata = new $.Map({'uri': uri, 'sources': JSON.stringify(sources)})
+    var postdata = new $.Map({'uri': uri, 'sources': sources})
     $.net.post(report_uri, postdata);
 });
 

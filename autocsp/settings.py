@@ -1,7 +1,7 @@
 
 # if locked mode is enabled, the CSP policy will be enforced, else the proxy
 # learns about the site first (while browsing it)
-LOCKED_MODE = False
+LOCKED_MODE = True
 
 # (schema, host, port) which will be reverse proxied
 REVERSE_PROXY = ('http', 'localhost', 8000)

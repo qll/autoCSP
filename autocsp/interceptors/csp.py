@@ -62,7 +62,7 @@ def inject_script(resp):
 
 @subscribe('response', mode='locked')
 def inject_csp(resp):
-    """ Injects a Content Security Policy to protect the site. """
+    """ Injects a Content Security Policy to protect the webapp. """
     db = lib.globals.Globals()['db']
     rules = {}
     for directive, src in db.select(('SELECT directive, uri FROM policy WHERE '
@@ -70,5 +70,5 @@ def inject_csp(resp):
         rules.setdefault(directive, []).append(src)
     policy = ['%s %s' % (d, ' '.join(rules.setdefault(d, ["'none'"])))
               for d in policy_rules]
-    # TODO(qll): FireFox does not know file path specific CSP directives, yet...
+    # TODO(qll): Firefox does not know file path specific CSP directives, yet...
     resp.headers['Content-Security-Policy'] = ['; '.join(policy)]

@@ -33,11 +33,11 @@ def report_policy(req):
             raise Http400Error()
         data['sources'] = json.loads(data['sources'])
         db = lib.globals.Globals()['db']
-        for elt in ('script', 'img'):
-            if elt in data['sources'] and isinstance(data['sources'][elt],
-                                                     list):
-                for insert in data['sources'][elt]:
+        for rule in ('script-src', 'img-src'):
+            if rule in data['sources'] and isinstance(data['sources'][rule],
+                                                      list):
+                for insert in data['sources'][rule]:
                     # XXX: possible performance problem
                     db.execute('INSERT INTO policy VALUES (NULL, ?, ?, ?)',
-                               (data['uri'], elt + '-src', insert))
+                               (data['uri'], rule, insert))
     return ''
