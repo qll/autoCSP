@@ -101,22 +101,10 @@ $.net.post = function(url, data, cb) {
 };
 
 
-var gather_uris = function(nodes, attribute) {
-    var uris = new $.Set();
-    for (var i = 0; i < nodes.length; i++) {
-        var uri = nodes[i][attribute];
-        if (uri) {
-            uris.add(uri);
-        }
-    }
-    return uris.get_array();
-};
-
-
 // variable definitions
 var report_uri = '{{ report_uri }}';
-var self_uri = location.protocol + '//' + location.hostname +
-               (location.port ? ':' + location.port : '')
+//var self_uri = location.protocol + '//' + location.hostname +
+//               (location.port ? ':' + location.port : '')
 
 
 // build a list of node types we want to visit
@@ -131,16 +119,8 @@ var visit = new $.Map({
     'SCRIPT': new $.Map({'script-src': get_src}),
     'IMG': new $.Map({'img-src': get_src}),
 });
-
-
-window.addEventListener('load', function() {
-    // document.styleSheets[0].href
-
-    // all gathered sources
+var gather_uris = function(nodes) {
     var sources = new $.Map();
-
-    // visit all nodes
-    var nodes = document.getElementsByTagName('*');
     var node = null;
     var store_in_sources = function(directive, func) {
         var uri = func(node);
@@ -152,17 +132,36 @@ window.addEventListener('load', function() {
         if (nodes[i].tagName) {
             node = nodes[i];
             visit.get('*').foreach(store_in_sources);
-            if (visit.has_key(nodes[i].tagName)) {
-                visit.get(nodes[i].tagName).foreach(store_in_sources);
+            if (visit.has_key(node.tagName)) {
+                visit.get(node.tagName).foreach(store_in_sources);
             }
         }
     }
+    return sources;
+};
 
-    // create JSON string
-    var sources = JSON.stringify(sources.valueOf());
+
+window.addEventListener('load', function() {
+    // document.styleSheets[0].href
+
     var uri = location.pathname + location.search;
-    var postdata = new $.Map({'uri': uri, 'sources': sources})
-    $.net.post(report_uri, postdata);
+    var gather_and_post = function(nodes) {
+        var sources = JSON.stringify(gather_uris(nodes).valueOf());
+        var postdata = new $.Map({'uri': uri, 'sources': sources})
+        $.net.post(report_uri, postdata);
+    };
+
+    // visit all nodes
+    gather_and_post(document.getElementsByTagName('*'));
+
+    // register an observer for future changes
+    var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            gather_and_post(mutation.addedNodes);
+        });
+    });
+    observer.observe(document.body.parentNode,
+                     {subtree: true, childList: true});
 });
 
 
