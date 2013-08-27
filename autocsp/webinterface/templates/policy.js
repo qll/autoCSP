@@ -146,7 +146,12 @@ window.addEventListener('load', function() {
 
     var uri = location.pathname + location.search;
     var gather_and_post = function(nodes) {
-        var sources = JSON.stringify(gather_uris(nodes).valueOf());
+        var sources = gather_uris(nodes).valueOf();
+        if (!sources) {
+            return;
+        }
+        var sources = JSON.stringify(sources);
+        console.log(sources);
         var postdata = new $.Map({'uri': uri, 'sources': sources})
         $.net.post(report_uri, postdata);
     };
@@ -157,11 +162,13 @@ window.addEventListener('load', function() {
     // register an observer for future changes
     var observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
-            gather_and_post(mutation.addedNodes);
+            var nodes = (mutation.type === 'childList') ? mutation.addedNOdes :
+                                                          [mutation.target];
+            gather_and_post(nodes);
         });
     });
     observer.observe(document.body.parentNode,
-                     {subtree: true, childList: true});
+                     {subtree: true, childList: true, attributes: true});
 });
 
 
