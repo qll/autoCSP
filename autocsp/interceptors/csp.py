@@ -1,12 +1,10 @@
 import re
 
+import lib.csp
 import lib.globals
 
 from lib.events import subscribe
 from settings import WEBINTERFACE_URI
-
-
-policy_rules = ('script-src', 'img-src')
 
 
 @subscribe('db_init')
@@ -69,6 +67,6 @@ def inject_csp(resp):
                                      'internal_uri = ?'), (resp.request.path,)):
         rules.setdefault(directive, []).append(src)
     policy = ['%s %s' % (d, ' '.join(rules.setdefault(d, ["'none'"])))
-              for d in policy_rules]
+              for d in lib.csp.rules]
     # TODO(qll): Firefox does not know file path specific CSP directives, yet...
     resp.headers['Content-Security-Policy'] = ['; '.join(policy)]

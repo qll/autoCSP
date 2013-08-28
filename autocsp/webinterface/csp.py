@@ -1,6 +1,7 @@
 import json
 import urllib
 
+import lib.csp
 import lib.globals
 import lib.http
 import webinterface.static
@@ -33,7 +34,7 @@ def report_policy(req):
             raise Http400Error()
         data['sources'] = json.loads(data['sources'])
         db = lib.globals.Globals()['db']
-        for rule in ('script-src', 'img-src'):
+        for rule in lib.csp.rules:
             if rule in data['sources'] and isinstance(data['sources'][rule],
                                                       list):
                 for insert in data['sources'][rule]:
