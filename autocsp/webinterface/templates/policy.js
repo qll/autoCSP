@@ -1,4 +1,6 @@
 (function() {
+/** Policy generation script. Will retrieve CSP directive URIs from the DOM. */
+'use strict';
 
 
 (function() {
@@ -8,27 +10,26 @@
 })();
 
 
-// internal implementation
+// shortcut functions
 var $ = {
     empty: function(value) {
-        /** Checks if the element is empty. */
         if (value === null || value === undefined ||
             (value.constructor === Array && !value.length) || !value) {
             return true;
         }
         return false;
     },
+    /*
     toAbsoluteURI: function(uri) {
-        /** Makes an absolute URI from a relative one. */
         var a = document.createElement('a');
         a.href = uri;
         return a.href;
-    },
+    },*/
 };
 
 
 // Array functions
-$.a = {
+var $a = {
     forEach: function(array, callback) {
         /** Calls forEach on arrays and array-like objects. */
         Array.prototype.forEach.call(array, callback);
@@ -40,6 +41,20 @@ $.a = {
 };
 
 
+// Object functions
+var $o = {
+    forEach: function(object, callback) {
+        for (var key in object) {
+            if ($o.in(object, key)) {
+                callback(key, object[key]);
+            }
+        }
+    },
+    in: function(object, key) {
+        /** Returns if an key exists in the object. */
+        return Object.prototype.hasOwnProperty.call(object, key);
+    },
+};
 
 
 $.Map = function(values) {
@@ -112,42 +127,45 @@ $.Set.prototype.valueOf = function() {
 };
 
 
-$.net = {};
-$.net.Request = function(url, cb) {
-    cb = cb || function () {};
+// Network functions
+var $n = {
+    get: function(url, callback) {
+        (new $n.Request(url, callback)).get();
+    },
+    post: function(url, data, callback) {
+        /** POSTS to the URL and url-encodes the data object. */
+        var components = [];
+        $o.forEach(data, function(key, value) {
+            components.push(window.encodeURIComponent(key) + '=' +
+                            window.encodeURIComponent(value));
+        });
+        (new $n.Request(url, callback)).post(components.join('&'));
+    }, 
+};
+$n.Request = function(url, callback) {
+    callback = callback || function () {};
     this.url = url;
     this.xhr = new XMLHttpRequest();
     this.xhr.addEventListener('readystatechange', function() {
         if (this.readyState === 4) {
-            cb(this.responseText);
+            callback(this.responseText);
         }
     });
 };
-$.net.Request.prototype.get = function() {
+$n.Request.prototype.get = function() {
     this.xhr.open('GET', this.url);
     this.xhr.send();
-}
-$.net.Request.prototype.post = function(data) {
+};
+$n.Request.prototype.post = function(data) {
+    data = data || '';
     this.xhr.open('POST', this.url);
     this.xhr.send(data);
-}
-$.net.get = function(url, cb) {
-    (new $.net.Request(url, cb)).get();
-};
-$.net.post = function(url, data, cb) {
-    var components = [];
-    data.foreach(function(key, value) {
-        components.push(encodeURIComponent(key) + '=' +
-                        encodeURIComponent(value));
-    });
-    (new $.net.Request(url, cb)).post(components.join('&'));
 };
 
 
 // variable definitions
-var report_uri = '{{ report_uri }}';
-var self_uri = location.protocol + '//' + location.hostname +
-               (location.port ? ':' + location.port : '') + '/';
+//var self_uri = location.protocol + '//' + location.hostname +
+//               (location.port ? ':' + location.port : '') + '/';
 
 
 // will contain a Map of Node types we want to visit
@@ -157,7 +175,7 @@ var visit = null;
 /** Contains all functions used to extract sources. **/
 (function() {
     var getSrc = function(e) {
-        return e.getAttribute('src');
+        return e.src;
     };
     var getBackgroundImage = function(e) {
         /** Retrieve all background image URIs. */
@@ -166,12 +184,7 @@ var visit = null;
         return (match) ? match[1] : null;
     };
     var getIcon = function(e) {
-        /** Check if <link>-element is icon and return href. */
-        if (e.getAttribute('rel') === 'icon') {
-            var uri = e.getAttribute('href');
-            if (!$.empty(uri)) { return $.toAbsoluteURI(uri); }
-        }
-        return null;
+        return (e.rel === 'icon') ? e.href : null;
     };
 
     // remembers all stylesheets (prevent crawling rules a second time)
@@ -179,7 +192,7 @@ var visit = null;
     var appendStyle = function(stylesheet, newStyles) {
         /** If a stylesheet was found this will check if its new and recurse. */
         // unfortunately we cannot know if we already visited an inline style
-        if (!$.a.in(styles, stylesheet.href)) {
+        if (!$a.in(styles, stylesheet.href)) {
             // don't add to styles list if inline
             if (!$.empty(stylesheet.href)) {
                 newStyles.push(stylesheet.href);
@@ -197,68 +210,68 @@ var visit = null;
     };
     var checkStyles = function(e) {
         /** Checks for new stylesheets in document.styleSheets. */
-        newStyles = [];
-        $.a.forEach(document.styleSheets, function(stylesheet) {
+        var newStyles = [];
+        $a.forEach(document.styleSheets, function(stylesheet) {
             appendStyle(stylesheet, newStyles);
         });
         return newStyles;
     };
 
-    visit = new $.Map({
-        '*': new $.Map({'img-src': getBackgroundImage}),
-        'IMG': new $.Map({'img-src': getSrc}),
-        'LINK': new $.Map({'img-src': getIcon, 'style-src': checkStyles}),
-        'SCRIPT': new $.Map({'script-src': getSrc}),
-        'STYLE': new $.Map({'style-src': checkStyles}),
-    });
+    visit = {
+        '*': {'img-src': getBackgroundImage},
+        'IMG': {'img-src': getSrc},
+        'LINK': {'img-src': getIcon, 'style-src': checkStyles},
+        'SCRIPT': {'script-src': getSrc},
+        'STYLE': {'style-src': checkStyles},
+    };
 })();
 
 
-var gather_uris = function(nodes) {
-    /** Use visit list to find interesting nodes and extract source uris. */
-    var sources = new $.Map();
-    var node = null;
-    var store_in_sources = function(directive, func) {
-        var uri = func(node);
-        if (!$.empty(uri)) {
-            sources.setdefault(directive, new $.Set()).add(uri);
-        }
-    };
-    for (var i = 0; i < nodes.length; i++) {
-        if (nodes[i].tagName) {
-            node = nodes[i];
-            visit.get('*').foreach(store_in_sources);
-            if (visit.has_key(node.tagName)) {
-                visit.get(node.tagName).foreach(store_in_sources);
+window.addEventListener('load', function() {
+    var inferRules = function(nodes) {
+        /** Infers CSP rules from given nodes with the visit list. */
+        var sources = new $.Map();
+        var node = null;
+        var store_in_sources = function(directive, func) {
+            var uri = func(node);
+            if (!$.empty(uri)) {
+                sources.setdefault(directive, new $.Set()).add(uri);
+            }
+        };
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].tagName) {
+                node = nodes[i];
+                $o.forEach(visit['*'], store_in_sources);
+                if ($o.in(visit, node.tagName)) {
+                    $o.forEach(visit[node.tagName], store_in_sources);
+                }
             }
         }
-    }
-    return sources;
-};
-
-
-window.addEventListener('load', function() {
-    var uri = location.pathname + location.search;
-    var gather_and_post = function(nodes) {
-        var sources = gather_uris(nodes);
-        if (!sources.length) {
-            return;
-        }
-        var sources = JSON.stringify(sources.valueOf());
-        console.log(sources);
-        var postdata = new $.Map({'uri': uri, 'sources': sources})
-        $.net.post(report_uri, postdata);
+        return sources;
     };
 
-    // visit all nodes
-    gather_and_post(document.getElementsByTagName('*'));
+    var uri = location.pathname + location.search;
+    var processNodes = function(nodes) {
+        /** Retrieves policy rules from nodes and POSTs to backend. */
+        var rules = inferRules(nodes);
+        if ($.empty(rules)) {
+            // don't POST empty JSON response
+            return;
+        }
+        var rules = JSON.stringify(rules.valueOf());
+        console.log(rules);
+        $n.post('{{ report_uri }}', {'uri': uri, 'sources': rules});
+    };
 
-    // register an observer for future changes
+    // visit all nodes at load one time
+    processNodes(document.getElementsByTagName('*'));
+
+    // register an observer for future changes (tree mod and attributes)
     var observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            var nodes = (mutation.type === 'childList') ? mutation.addedNOdes :
+        $a.forEach(mutations, function(mutation) {
+            var nodes = (mutation.type === 'childList') ? mutation.addedNodes :
                                                           [mutation.target];
-            gather_and_post(nodes);
+            processNodes(nodes);
         });
     });
     observer.observe(document.body.parentNode,
