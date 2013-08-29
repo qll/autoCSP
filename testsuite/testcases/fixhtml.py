@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 """ Quick helper to add HTML5 DOCTYPE and <title> to every testcase. """
 import os
 import re
