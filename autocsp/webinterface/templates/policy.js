@@ -57,6 +57,14 @@ var $o = {
 };
 
 
+// String functions
+var $s = {
+    startsWith: function(str, startstr) {
+        return str.slice(0, startstr.length) === startstr;
+    },
+};
+
+
 $.Map = function(values) {
     /** Maps keys to values without the shenanigans of JavaScript. */
     this.values = values || {};
@@ -174,17 +182,26 @@ var visit = null;
 
 /** Contains all functions used to extract sources. **/
 (function() {
+    var sanitizeUri = function(uri) {
+        /** Detects data: URIs and just returns data: in that case */
+        if ($.empty(uri) || !$s.startsWith(uri, 'data:')) {
+            return uri;
+        }
+        // oh, it's a data URI
+        return 'data:';
+    };
+
     var getSrc = function(e) {
-        return e.src;
+        return sanitizeUri(e.src);
     };
     var getBackgroundImage = function(e) {
         /** Retrieve all background image URIs. */
         var bg = window.getComputedStyle(e, false).backgroundImage;
         var match = bg.match(/url\('?([^)]*[^']+)'?\)/);
-        return (match) ? match[1] : null;
+        return (match) ? sanitizeUri(match[1]) : null;
     };
     var getIcon = function(e) {
-        return (e.rel === 'icon') ? e.href : null;
+        return (e.rel === 'icon') ? sanitizeUri(e.href) : null;
     };
 
     // remembers all stylesheets (prevent crawling rules a second time)
@@ -192,11 +209,12 @@ var visit = null;
     var appendStyle = function(stylesheet, newStyles) {
         /** If a stylesheet was found this will check if its new and recurse. */
         // unfortunately we cannot know if we already visited an inline style
-        if (!$a.in(styles, stylesheet.href)) {
+        var uri = sanitizeUri(stylesheet.href);
+        if (!$a.in(styles, uri)) {
             // don't add to styles list if inline
-            if (!$.empty(stylesheet.href)) {
-                newStyles.push(stylesheet.href);
-                styles.push(stylesheet.href);
+            if (!$.empty(uri)) {
+                newStyles.push(uri);
+                styles.push(uri);
             }
             for (var i = 0; i < stylesheet.rules.length; i++) {
                 // @import rules are always on top so break if no import
