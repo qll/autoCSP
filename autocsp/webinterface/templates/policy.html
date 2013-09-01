@@ -3,8 +3,8 @@
 {% block content %}
 <section>
     <h3>Policy for {{ internal_uri }}</h3>
-    <div>
-        {{ policy }}
+    <div id="policy">
+        <b>Content-Security-Policy:</b> {{ policy }}
     </div>
 </section>
 <section>
@@ -12,7 +12,11 @@
     <div id="observed">
         <ul>
             {% for directive, ruleset in rules.items() %}
-                <li>{{ directive }}: {{ ruleset }}</li>
+                {% if ruleset != ["'none'"] %}
+                    {% for rule in ruleset %}
+                        <li>{{ directive }}: {{ rule }}</li>
+                    {% endfor %}
+                {% endif %}
             {% endfor %}
         </ul>
     </div>

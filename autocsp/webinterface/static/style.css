@@ -125,3 +125,6 @@ footer div {
 #observed ul li:last-child {
     border-bottom: 0;
 }
+#policy {
+    font-family: monospace;
+}
