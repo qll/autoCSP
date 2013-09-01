@@ -33,7 +33,12 @@ class ThreadedDatabase(threading.Thread):
         connection.close()
 
     def execute(self, req, arg=None, res=None):
-        self.requests.put((req, arg or tuple(), res))
+        if arg:
+            if not isinstance(arg, tuple):
+                arg = (arg,)
+        else:
+            arg = tuple()
+        self.requests.put((req, arg, res))
 
     def select(self, req, arg=None):
         res = Queue()

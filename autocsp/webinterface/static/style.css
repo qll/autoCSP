@@ -69,6 +69,10 @@ nav a:hover {
 }
 section {
     border: 2px solid #ebe5df;
+    margin-bottom: 20px;
+}
+section:last-child {
+    margin-bottom: 25px;
 }
 section h3 {
     background: #ebe5df;
@@ -102,5 +106,22 @@ footer div {
     position: relative;
 }
 #content {
-    padding:20px;
+    padding: 20px;
+}
+#observed {
+    padding: 0;
+}
+#observed ul {
+    list-style-type: none;
+}
+#observed ul li {
+    padding: 3px;
+    border-bottom: 1px solid #ccc;
+    background: #fafafa;
+}
+#observed ul li:nth-child(even) {
+    background: #f1f1f1;
+}
+#observed ul li:last-child {
+    border-bottom: 0;
 }

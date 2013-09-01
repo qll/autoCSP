@@ -8,18 +8,14 @@
         <h1><a href="{{ base_url }}">autoCSP</a></h1>
         <nav>
             <ul>
-                <li><a href="{{ base_url }}export/">Export</a></li>
+                <li><a href="{{ base_url }}">Overview</a></li>
+                <li><a href="{{ base_url }}export">Export</a></li>
                 <li></li>
             </ul>
         </nav>
     </header>
     <div id="content">
-        <section>
-            <h3>Box</h3>
-            <div>
-                text
-            </div>
-        </section>
+        {% block content %}{% endblock %}
     </div>
     <footer>
         <div>

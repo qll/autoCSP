@@ -66,7 +66,4 @@ def inject_csp(resp):
     for directive, src in db.select(('SELECT directive, uri FROM policy WHERE '
                                      'internal_uri = ?'), (resp.request.path,)):
         rules.setdefault(directive, []).append(src)
-    policy = ['%s %s' % (d, ' '.join(rules.setdefault(d, ["'none'"])))
-              for d in lib.csp.rules]
-    # TODO(qll): Firefox does not know file path specific CSP directives, yet...
-    resp.headers['Content-Security-Policy'] = ['; '.join(policy)]
+    resp.headers['Content-Security-Policy'] = [lib.csp.generate_policy(rules)]

@@ -1,0 +1,20 @@
+{% extends 'layout.html' %}
+{% block title %}View Policy{% endblock %}
+{% block content %}
+<section>
+    <h3>Policy for {{ internal_uri }}</h3>
+    <div>
+        {{ policy }}
+    </div>
+</section>
+<section>
+    <h3>Rules</h3>
+    <div id="observed">
+        <ul>
+            {% for directive, ruleset in rules.items() %}
+                <li>{{ directive }}: {{ ruleset }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</section>
+{% endblock %}
