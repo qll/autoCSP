@@ -6,6 +6,7 @@ import sys
 
 
 def fixhtml(folder):
+    changed = 0
     for dirpath, _, filenames in os.walk(folder):
         for file in filenames:
             name, ext = os.path.splitext(file)
@@ -18,12 +19,15 @@ def fixhtml(folder):
                 content = f.read()
             if content.startswith(shouldbe):
                 continue
+            changed += 1
             content = re.sub('\s*<!DOCTYPE[^>]*>\s*<title>[^<]*</title>\s*', '',
                              content)
             with open(path, 'w') as f:
                 f.write(shouldbe + content)
+    return changed
 
 
 if __name__ == '__main__':
     folder = '.' if len(sys.argv) < 2 else sys.argv[1]
-    fixhtml(folder)
+    changed = fixhtml(folder)
+    print('Fixed %d files.' % changed)
