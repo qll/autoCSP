@@ -13,8 +13,13 @@
 // shortcut functions
 var $ = {
     empty: function(value) {
+        /** Sane emptiness check. $.empty([]) == true, $.empty({}) == true */
         if (value === null || value === undefined ||
-            (value.constructor === Array && !value.length) || !value) {
+            (value.constructor !== Boolean &&
+             ((value.constructor === Array && !value.length) ||
+              (value.constructor === Object &&
+               value.toString() == '[object Object]' &&
+               !Object.keys(value).length) || !value))) {
             return true;
         }
         return false;
@@ -30,6 +35,16 @@ var $ = {
 
 // Array functions
 var $a = {
+    add: function(array, value) {
+        /** If value, adds to array, if array adds all values to array. */
+        if (value.constructor === Array) {
+            for (var i = 0; i < value.length; i++) {
+                array.push(value[i]);
+            }
+        } else {
+            array.push(value);
+        }
+    },
     forEach: function(array, callback) {
         /** Calls forEach on arrays and array-like objects. */
         Array.prototype.forEach.call(array, callback);
@@ -54,6 +69,14 @@ var $o = {
         /** Returns if an key exists in the object. */
         return Object.prototype.hasOwnProperty.call(object, key);
     },
+    setDefault: function(object, key, default_val) {
+        /** Returns a object key and sets it if it does not exist, yet. */
+        default_val = default_val || null;
+        if (!$o.in(object, key)) {
+            object[key] = default_val;
+        }
+        return object[key];
+    },
 };
 
 
@@ -62,76 +85,6 @@ var $s = {
     startsWith: function(str, startstr) {
         return str.slice(0, startstr.length) === startstr;
     },
-};
-
-
-$.Map = function(values) {
-    /** Maps keys to values without the shenanigans of JavaScript. */
-    this.values = values || {};
-    this.length = Object.keys(this.values).length;
-};
-$.Map.prototype.add = function(key, value) {
-    this.values[key] = value;
-    this.length++;
-};
-$.Map.prototype.foreach = function(cb) {
-    for (var key in this.values) {
-        if (this.has_key(key)) {
-            cb(key, this.values[key]);
-        }
-    }
-};
-$.Map.prototype.get = function(key) {
-    return this.values[key];
-};
-$.Map.prototype.get_object = function() {
-    return this.values;
-};
-$.Map.prototype.has_key = function(key) {
-    return Object.prototype.hasOwnProperty.call(this.values, key);
-};
-$.Map.prototype.setdefault = function(key, default_val) {
-    default_val = default_val || null;
-    if (!this.has_key(key)) {
-        this.values[key] = default_val;
-        this.length++;
-    }
-    return this.values[key];
-};
-$.Map.prototype.valueOf = function() {
-    var internal = {};
-    this.foreach(function(key, value) {
-        internal[key] = value.valueOf();
-    });
-    return internal;
-};
-
-
-$.Set = function(values) {
-    var values = values || [];
-    this.values = {};
-    for (var i = 0; i < values.length; i++) {
-        this.values[values[i]] = true;
-    }
-};
-$.Set.prototype.add = function(value) {
-    /** Adds a new element or a list of elements to the Set. */
-    if ($.empty(value)) {
-        return false;
-    }
-    if (value.constructor === Array) {
-        for (var i = 0; i < value.length; i++) {
-            this.add(value[i]);
-        }
-    } else {
-        this.values[value] = true;
-    }
-};
-$.Set.prototype.get_array = function() {
-    return Object.keys(this.values);
-};
-$.Set.prototype.valueOf = function() {
-    return this.get_array();
 };
 
 
@@ -187,7 +140,6 @@ var visit = null;
         if ($.empty(uri) || !$s.startsWith(uri, 'data:')) {
             return uri;
         }
-        // oh, it's a data URI
         return 'data:';
     };
 
@@ -248,12 +200,15 @@ var visit = null;
 window.addEventListener('load', function() {
     var inferRules = function(nodes) {
         /** Infers CSP rules from given nodes with the visit list. */
-        var sources = new $.Map();
+        var rules = {};
         var node = null;
         var store_in_sources = function(directive, func) {
             var uri = func(node);
             if (!$.empty(uri)) {
-                sources.setdefault(directive, new $.Set()).add(uri);
+                var list = $o.setDefault(rules, directive, []);
+                if (!$a.in(list, uri)) {
+                    $a.add(list, uri);
+                }
             }
         };
         for (var i = 0; i < nodes.length; i++) {
@@ -265,7 +220,7 @@ window.addEventListener('load', function() {
                 }
             }
         }
-        return sources;
+        return rules;
     };
 
     var uri = location.pathname + location.search;
