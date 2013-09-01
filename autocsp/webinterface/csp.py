@@ -7,14 +7,14 @@ import lib.http
 import webinterface.static
 
 from lib.webinterface import path, render_template, Http400Error
-from settings import WEBINTERFACE_URI
+from settings import DEBUG, WEBINTERFACE_URI
 
 
 @path('/_/policy.js')
 def serve_policy(req):
     ''' Serves the policy.js script. '''
-    template = render_template('policy.js', report_uri='/%s/_/policy'
-                                                       % WEBINTERFACE_URI)
+    report_uri = '/%s/_/policy' % WEBINTERFACE_URI
+    template = render_template('policy.js', report_uri=report_uri, debug=DEBUG)
     r = lib.http.Response(content=template)
     r.set_header('Content-Type', '%s; charset=UTF-8' %
                                  webinterface.static.mime_types['.js'])

@@ -3,6 +3,12 @@
 'use strict';
 
 
+var DEBUG = {{ debug|int }};
+if (DEBUG) {
+    console.warn('autoCSP is in debug mode.');
+}
+
+
 (function() {
     /** Delete this <script> element from DOM (first script on page). */
     var this_element = document.getElementsByTagName('script')[0];
@@ -124,11 +130,6 @@ $n.Request.prototype.post = function(data) {
 };
 
 
-// variable definitions
-//var self_uri = location.protocol + '//' + location.hostname +
-//               (location.port ? ':' + location.port : '') + '/';
-
-
 // will contain a Map of Node types we want to visit
 var visit = null;
 
@@ -136,11 +137,13 @@ var visit = null;
 /** Contains all functions used to extract sources. **/
 (function() {
     var sanitizeUri = function(uri) {
-        /** Detects data: URIs and just returns data: in that case */
-        if ($.empty(uri) || !$s.startsWith(uri, 'data:')) {
-            return uri;
+        /** Clears data from data-URIs. */
+        if (!$.empty(uri)) {
+            if ($s.startsWith(uri, 'data:')) {
+                return 'data:';
+            }
         }
-        return 'data:';
+        return uri;
     };
 
     var getSrc = function(e) {
@@ -232,12 +235,21 @@ window.addEventListener('load', function() {
             return;
         }
         var rules = JSON.stringify(rules.valueOf());
-        console.log(rules);
+        if (DEBUG) {
+            console.info('Sending data to backend for ' + uri + ':\n' + rules);
+        }
         $n.post('{{ report_uri }}', {'uri': uri, 'sources': rules});
     };
 
-    // visit all nodes at load one time
+    if (DEBUG) {
+        console.log('Start processing all nodes to infer rules...');
+        var startTime = Date.now();
+    }
     processNodes(document.getElementsByTagName('*'));
+    if (DEBUG) {
+        var delta = Date.now() - startTime;
+        console.log('Finished processing all nodes in ' + delta + ' ms.');
+    }
 
     // register an observer for future changes (tree mod and attributes)
     var observer = new MutationObserver(function(mutations) {

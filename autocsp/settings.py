@@ -6,6 +6,9 @@ LOCKED_MODE = False
 # (schema, host, port) which will be reverse proxied
 REVERSE_PROXY = ('http', 'localhost', 8000)
 
+# debug mode enables console logs for developers (auto-disabled in locked mode)
+DEBUG = True
+
 # URI path prefix for internal autoCSP URLs (webinterface)
 WEBINTERFACE_URI = '_autoCSP'
 
