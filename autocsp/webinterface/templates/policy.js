@@ -149,6 +149,25 @@ var visit = null;
     var getSrc = function(e) {
         return sanitizeUri(e.src);
     };
+    var frames = [];
+    var getFrameSrc = function(e) {
+        if (!$a.in(frames, e)) {
+            frames.push(e);
+            var blocknext = false;
+            e.addEventListener('load', function() {
+                if (blocknext) {
+                    blocknext = false;
+                } else {
+                    // re-set the src to the navigated location to trigger a
+                    // Mutation Observer attribute change
+                    // XXX: can cause problems
+                    this.src = e.contentWindow.location;
+                    blocknext = true;
+                }
+            });  
+        }
+        return getSrc(e);
+    };
     var getBackgroundImage = function(e) {
         /** Retrieve all background image URIs. */
         var bg = window.getComputedStyle(e, false).backgroundImage;
@@ -192,6 +211,7 @@ var visit = null;
 
     visit = {
         '*': {'img-src': getBackgroundImage},
+        'IFRAME': {'frame-src': getFrameSrc},
         'IMG': {'img-src': getSrc},
         'LINK': {'img-src': getIcon, 'style-src': checkStyles},
         'SCRIPT': {'script-src': getSrc},
@@ -201,6 +221,9 @@ var visit = null;
 
 
 window.addEventListener('load', function() {
+    // current path
+    var uri = location.pathname + location.search;
+
     var inferRules = function(nodes) {
         /** Infers CSP rules from given nodes with the visit list. */
         var rules = {};
@@ -225,8 +248,6 @@ window.addEventListener('load', function() {
         }
         return rules;
     };
-
-    var uri = location.pathname + location.search;
     var processNodes = function(nodes) {
         /** Retrieves policy rules from nodes and POSTs to backend. */
         var rules = inferRules(nodes);
@@ -240,6 +261,7 @@ window.addEventListener('load', function() {
         }
         $n.post('{{ report_uri }}', {'uri': uri, 'sources': rules});
     };
+
 
     if (DEBUG) {
         console.log('Start processing all nodes to infer rules...');

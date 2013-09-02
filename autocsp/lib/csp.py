@@ -1,5 +1,5 @@
 
-rules = ('script-src', 'img-src', 'style-src')
+rules = ('frame-src', 'img-src', 'script-src', 'style-src')
 
 
 def generate_policy(directives):
