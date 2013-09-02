@@ -211,11 +211,15 @@ var visit = null;
 
     visit = {
         '*': {'img-src': getBackgroundImage},
+        'AUDIO': {'media-src': getSrc},
+        'FRAME': {'frame-src': getFrameSrc},
         'IFRAME': {'frame-src': getFrameSrc},
         'IMG': {'img-src': getSrc},
         'LINK': {'img-src': getIcon, 'style-src': checkStyles},
         'SCRIPT': {'script-src': getSrc},
+        'SOURCE': {'media-src': getSrc},
         'STYLE': {'style-src': checkStyles},
+        'VIDEO': {'media-src': getSrc},
     };
 })();
 
