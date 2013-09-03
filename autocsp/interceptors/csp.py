@@ -25,10 +25,9 @@ def clear_csp_header(request):
             del request.headers[field]
 
 
-# policy generation via violation reports is bad (see thesis)
-#@subscribe('response')
+@subscribe('response')
 def add_report_csp_header(resp):
-    """ Adds a Report-Only CSP header. """
+    """ Adds a Report-Only CSP header (policy generation). """
     policy = ["default-src 'none'; script-src 'none'; style-src 'none'; "
               "img-src 'none'; connect-src 'none'; font-src 'none'; "
               "object-src 'none'; media-src 'none'; frame-src 'none'; "
@@ -60,7 +59,7 @@ def inject_script(resp):
 
 @subscribe('response', mode='locked')
 def inject_csp(resp):
-    """ Injects a Content Security Policy to protect the webapp. """
+    """ Injects a CSP to protect the webapp (policy enforcement). """
     db = lib.globals.Globals()['db']
     rules = {}
     for directive, src in db.select(('SELECT directive, uri FROM policy WHERE '

@@ -30,12 +30,11 @@ var $ = {
         }
         return false;
     },
-    /*
-    toAbsoluteURI: function(uri) {
+    toAbsoluteUri: function(uri) {
         var a = document.createElement('a');
         a.href = uri;
         return a.href;
-    },*/
+    },
 };
 
 
@@ -149,6 +148,15 @@ var visit = null;
     var getSrc = function(e) {
         return sanitizeUri(e.src);
     };
+    var getAppletAttr = function(e) {
+        var uris = [];
+        $a.forEach(['code', 'archive', 'codebase'], function(prop) {
+            if (e[prop]) {
+                uris.push(sanitizeUri($.toAbsoluteUri(e[prop])));
+            }
+        });
+        return uris;
+    };
     var frames = [];
     var getFrameSrc = function(e) {
         if (!$a.in(frames, e)) {
@@ -167,6 +175,9 @@ var visit = null;
             });  
         }
         return getSrc(e);
+    };
+    var getObjectData = function(e) {
+        return sanitizeUri(e.data);
     };
     var getBackgroundImage = function(e) {
         /** Retrieve all background image URIs. */
@@ -211,14 +222,18 @@ var visit = null;
 
     visit = {
         '*': {'img-src': getBackgroundImage},
+        'APPLET': {'object-src': getAppletAttr},
         'AUDIO': {'media-src': getSrc},
+        'EMBED': {'object-src': getSrc},
         'FRAME': {'frame-src': getFrameSrc},
         'IFRAME': {'frame-src': getFrameSrc},
         'IMG': {'img-src': getSrc},
         'LINK': {'img-src': getIcon, 'style-src': checkStyles},
+        'OBJECT': {'object-src': getObjectData},
         'SCRIPT': {'script-src': getSrc},
         'SOURCE': {'media-src': getSrc},
         'STYLE': {'style-src': checkStyles},
+        'TRACK': {'media-src': getSrc},
         'VIDEO': {'media-src': getSrc},
     };
 })();

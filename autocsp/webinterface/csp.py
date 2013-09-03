@@ -46,6 +46,12 @@ def report_policy(req):
     return ''
 
 
+@lib.webinterface.path('/_/report')
+def report_sink(req):
+    print(req.content)
+    return ''
+
+
 @lib.webinterface.path('/policy')
 def display_policy(req):
     params = req.get_query()
