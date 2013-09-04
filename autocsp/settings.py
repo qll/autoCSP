@@ -16,10 +16,7 @@ WEBINTERFACE_URI = '_autoCSP'
 WEBINTERFACE_AUTH = None
 
 # enabled interceptors (order matters)
-INTERCEPTORS = (
-    'webinterface',
-    'csp',
-)
+INTERCEPTORS = ('webinterface', 'caching', 'csp')
 
 PATHS = {
     # path to sqlite3 database (does not have to exist)
