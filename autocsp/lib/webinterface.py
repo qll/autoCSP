@@ -2,7 +2,7 @@ import re
 
 import jinja2
 
-from lib.http import Response
+from lib.http import status_codes, Response
 from settings import WEBINTERFACE_URI
 
 
@@ -18,19 +18,23 @@ env.globals['base_url'] = '/%s/' % WEBINTERFACE_URI
 
 
 class HttpError(Exception):
+    def __init__(self, status_code, msg=''):
+        self.status_code = status_code
+        msg = msg or '%d - %s' % (status_code, status_codes[status_code])
+        Exception.__init__(self, msg)
+
     def build_response(self):
         return Response(content=self.message, status_code=self.status_code)
 
 
 class Http400Error(HttpError):
-    """ If the client has sent a bad request. """
+    """ Client sent a bad request. """
     def __init__(self, msg=''):
-        self.status_code = 400
-        HttpError.__init__(self, msg if msg else '400 - Bad Request')
+        HttpError.__init__(self, 400, msg)
 
 
 class Http401Error(HttpError):
-    """ If client has to authenticate itsself to see the website. """
+    """ Client has to authenticate to view the website. """
     def __init__(self, realm, msg=''):
         self.realm = realm
         HttpError.__init__(self, msg if msg else '401 - Unauthorized')
@@ -43,8 +47,12 @@ class Http401Error(HttpError):
 
 class Http404Error(HttpError):
     def __init__(self, msg=''):
-        self.status_code = 404
-        HttpError.__init__(self, msg if msg else '404 - Not Found')
+        HttpError.__init__(self, 404, msg)
+
+
+class Http500Error(HttpError):
+    def __init__(self, msg=''):
+        HttpError.__init__(self, 500, msg)
 
 
 class path(object):
@@ -82,5 +90,9 @@ def call_view(req, path):
                 response = wrap_response(function(req, *match.groups()))
             except HttpError as e:
                 response = e.build_response()
+            except Exception as e:
+                response = Http500Error().build_response()
+                # TODO(qll): Implement logging
+                print(e)
             break
     return response

@@ -1,4 +1,6 @@
+""" Data-retrieving views. """
 import json
+import re
 import urllib
 
 import lib.csp
@@ -12,7 +14,7 @@ from settings import DEBUG, WEBINTERFACE_URI
 
 @lib.webinterface.path('/_/policy.js')
 def serve_policy(req):
-    ''' Serves the policy.js script. '''
+    """ Serves the policy.js script. """
     report_uri = '/%s/_/policy' % WEBINTERFACE_URI
     template = lib.webinterface.render_template('policy.js',
                                                 report_uri=report_uri,
@@ -24,8 +26,8 @@ def serve_policy(req):
 
 
 @lib.webinterface.path('/_/policy')
-def report_policy(req):
-    ''' CSP policy.js sink. Writes all gathered information to database. '''
+def refine_policy(req):
+    """ Refines the policy obtained with the Report-Only header. """
     if '&' in req.content:
         data = {}
         for component in req.content.split('&'):
@@ -36,7 +38,7 @@ def report_policy(req):
             raise lib.webinterface.Http400Error()
         data['sources'] = json.loads(data['sources'])
         db = lib.globals.Globals()['db']
-        for rule in lib.csp.rules:
+        for rule in lib.csp.directives:
             if rule in data['sources'] and isinstance(data['sources'][rule],
                                                       list):
                 for insert in data['sources'][rule]:
@@ -47,24 +49,25 @@ def report_policy(req):
 
 
 @lib.webinterface.path('/_/report')
-def report_sink(req):
-    print(req.content)
-    return ''
-
-
-@lib.webinterface.path('/policy')
-def display_policy(req):
+def save_report(req):
+    """ Saves a CSP violation report to the policy database table. """
+    data = json.loads(req.content)
     params = req.get_query()
-    if 'uri' not in params:
-        raise lib.webinterface.Http400Error()
-    uri = params['uri'][0]
+    if 'id' not in params:
+        raise Exception('Violation report lacked an id.')
+    if 'csp-report' not in data:
+        raise Exception('csp-report not found in JSON data.')
+    report = data['csp-report']
+    if ('effective-directive' not in report or 'blocked-uri' not in report
+        or report['blocked-uri'] == '' or 'document-uri' not in report or
+        report['effective-directive'] not in lib.csp.directives):
+        return
+    document_uri = re.sub('^https?://[^/]+', '', report['document-uri'], 1,
+                          re.I)
     db = lib.globals.Globals()['db']
-    rules = {}
-    for directive, src in db.select(('SELECT directive, uri FROM policy WHERE '
-                                     'internal_uri = ?'), uri):
-        rules.setdefault(directive, []).append(src)
-    if len(rules) == 0:
-        raise lib.webinterface.Http404Error()
-    return lib.webinterface.make_response('policy.html', internal_uri=uri,
-                                          rules=rules,
-                                          policy=lib.csp.generate_policy(rules))
+    db.execute(('INSERT OR REPLACE INTO policy VALUES (NULL, :docuri, :dir, '
+                ':uri, :reqid, (SELECT count(count) FROM policy WHERE '
+                'request_id = :reqid) + 1)'),  # counts up to 2
+               {'docuri': document_uri, 'dir': report['effective-directive'],
+                'uri': report['blocked-uri'], 'reqid': params['id'][0]})
+    return

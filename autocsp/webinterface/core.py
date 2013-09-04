@@ -1,11 +1,31 @@
+""" Basic web interface. """
 import lib.csp
 import lib.globals
 
-from lib.webinterface import make_response, path
+from lib.webinterface import make_response, path, Http400Error, Http404Error
 
 
 @path('/')
 def index(req):
-    query = 'SELECT internal_uri FROM policy GROUP BY internal_uri'
+    """ Displays the index website. """
+    query = 'SELECT document_uri FROM policy GROUP BY document_uri'
     uris = [uri[0] for uri in lib.globals.Globals()['db'].select(query)]
     return make_response('index.html', uris=uris)
+
+
+@path('/policy')
+def display_policy(req):
+    """ Displays details of a policy. """
+    params = req.get_query()
+    if 'uri' not in params:
+        raise Http400Error()
+    uri = params['uri'][0]
+    db = lib.globals.Globals()['db']
+    rules = {}
+    for directive, src in db.select(('SELECT directive, uri FROM policy WHERE '
+                                     'document_uri = ?'), uri):
+        rules.setdefault(directive, []).append(src)
+    if len(rules) == 0:
+        raise Http404Error()
+    return make_response('policy.html', document_uri=uri, rules=rules,
+                                        policy=lib.csp.generate_policy(rules))

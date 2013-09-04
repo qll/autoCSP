@@ -6,6 +6,7 @@ from settings import PATHS
 
 # maps file endings to MIME-types
 mime_types = {
+    '': 'application/octet-stream',
     '.txt': 'text/plain',
     '.js': 'application/javascript',
     '.css': 'text/css',
@@ -24,5 +25,5 @@ def static(req, path):
         r = Response(content=f.read())
     _, ext = os.path.splitext(full_path)
     r.set_header('Content-Type', '%s; charset=UTF-8' %
-                 mime_types.get(ext, 'application/octet-stream'))
+                 mime_types.get(ext, mime_types['']))
     return r

@@ -34,7 +34,7 @@ class ThreadedDatabase(threading.Thread):
 
     def execute(self, req, arg=None, res=None):
         if arg:
-            if not isinstance(arg, tuple):
+            if not isinstance(arg, (tuple, dict)):
                 arg = (arg,)
         else:
             arg = tuple()
