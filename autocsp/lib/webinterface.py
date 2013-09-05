@@ -93,6 +93,6 @@ def call_view(req, path):
             except Exception as e:
                 response = Http500Error().build_response()
                 # TODO(qll): Implement logging
-                print(e)
+                print('Error: ' + str(e))
             break
     return response

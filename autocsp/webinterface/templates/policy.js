@@ -1,17 +1,14 @@
+
 (function() {
 /** Policy generation script. Will retrieve CSP directive URIs from the DOM. */
 'use strict';
 
 
-var DEBUG = {{ debug|int }};
-if (DEBUG) {
-    console.warn('autoCSP is in debug mode.');
-}
-
-
+var request_id = '';
 (function() {
     /** Delete this <script> element from DOM (first script on page). */
     var this_element = document.getElementsByTagName('script')[0];
+    request_id = this_element.dataset.id;
     this_element.parentNode.removeChild(this_element);
 })();
 
@@ -29,6 +26,13 @@ var $ = {
             return true;
         }
         return false;
+    },
+    log: function(msg, type) {
+        /** Log function which logs only when DEBUG is enabled. */
+        type = type || 'log';
+        if ({{ debug|int }}) {
+            console[type](msg);
+        }
     },
     toAbsoluteUri: function(uri) {
         var a = document.createElement('a');
@@ -136,13 +140,9 @@ var visit = null;
 /** Contains all functions used to extract sources. **/
 (function() {
     var sanitizeUri = function(uri) {
-        /** Clears data from data-URIs. */
-        if (!$.empty(uri)) {
-            if ($s.startsWith(uri, 'data:')) {
-                return 'data:';
-            }
-        }
-        return uri;
+        /** Nullifies data- and Same-Origin-URIs. */
+        return ($.empty(uri) || $s.startsWith(uri, 'data:') ||
+                $s.startsWith(uri, location.origin)) ? null : uri;
     };
 
     var getSrc = function(e) {
@@ -201,6 +201,9 @@ var visit = null;
                 newStyles.push(uri);
                 styles.push(uri);
             }
+            if ($.empty(stylesheet.rules)) {
+                return;
+            }
             for (var i = 0; i < stylesheet.rules.length; i++) {
                 // @import rules are always on top so break if no import
                 if (stylesheet.rules[i].constructor !== CSSImportRule) {
@@ -239,6 +242,11 @@ var visit = null;
 })();
 
 
+
+$.log('autoCSP is in debug mode.', 'warn');
+$.log('Request ID is ' + request_id + '.');
+
+
 window.addEventListener('load', function() {
     // current path
     var uri = location.pathname + location.search;
@@ -275,22 +283,18 @@ window.addEventListener('load', function() {
             return;
         }
         var rules = JSON.stringify(rules.valueOf());
-        if (DEBUG) {
-            console.info('Sending data to backend for ' + uri + ':\n' + rules);
-        }
-        $n.post('{{ report_uri }}', {'uri': uri, 'sources': rules});
+        $.log('Sending data to backend for ' + uri + ':\n' + rules);
+        $n.post('{{ report_uri }}', {'id': request_id, 'uri': uri,
+                                     'sources': rules});
     };
 
+    $.log('Start processing all nodes to infer rules...');
+    var startTime = Date.now();
 
-    if (DEBUG) {
-        console.log('Start processing all nodes to infer rules...');
-        var startTime = Date.now();
-    }
     processNodes(document.getElementsByTagName('*'));
-    if (DEBUG) {
-        var delta = Date.now() - startTime;
-        console.log('Finished processing all nodes in ' + delta + ' ms.');
-    }
+
+    var delta = Date.now() - startTime;
+    $.log('Finished processing all nodes in ' + delta + ' ms.');
 
     // register an observer for future changes (tree mod and attributes)
     var observer = new MutationObserver(function(mutations) {

@@ -13,7 +13,7 @@ from settings import WEBINTERFACE_URI
 def create_tables(db):
     db.execute('CREATE TABLE policy (id INTEGER PRIMARY KEY AUTOINCREMENT, '
                'document_uri TEXT, directive TEXT, uri TEXT, request_id TEXT, '
-               'count INTEGER, UNIQUE (document_uri, directive, uri))')
+               'activated INTEGER, UNIQUE (document_uri, directive, uri))')
 
 
 @subscribe('response')
@@ -33,25 +33,25 @@ def generate_id(length):
     return ''.join(random.choice(abc) for _ in range(length))
 
 
-@subscribe('response', mode='learning')
-def add_report_csp_header(resp):
+def add_report_header(resp, id):
     """ Adds a Report-Only CSP header (policy generation). """
-    # nonce to identify reports from one source
-    id = generate_id(32)
-    policy = ["default-src 'none'; script-src 'none'; style-src 'none'; "
-              "img-src 'none'; connect-src 'none'; font-src 'none'; "
-              "object-src 'none'; media-src 'none'; frame-src 'none'; "
-              "report-uri /_autoCSP/_/report?id=%s;" % id]
-    resp.headers['Content-Security-Policy-Report-Only'] = policy
+    db = lib.globals.Globals()['db']
+    rules = {}
+    for directive, src in db.select('SELECT directive, uri FROM policy WHERE '
+                                    'document_uri = ? OR document_uri = '
+                                    "'learn'", resp.request.path):
+        rules.setdefault(directive, []).append(src)
+    policy = lib.csp.generate_policy(rules)
+    policy += '; report-uri /%s/_/report?id=%s' % (WEBINTERFACE_URI, id)
+    resp.headers['Content-Security-Policy-Report-Only'] = [policy]
 
 
-#@subscribe('response', mode='learning')
-def inject_script(resp):
+def inject_script(resp, id):
     """ Injects a script into every served HTML page (policy generation). """
     if 'Content-Type' in resp.headers:
         if re.match('\s*text/x?html*.', ''.join(resp.headers['Content-Type'])):
-            inj = ('<script src="/%s/_/policy.js"></script>'
-                   % WEBINTERFACE_URI)
+            inj = ('<script src="/%s/_/policy.js" data-id="%s"></script>'
+                   % (WEBINTERFACE_URI, id))
             # inject after <head>
             if '<head' in resp.content:
                 resp.content = re.sub('(<head[^>]*>)',
@@ -67,12 +67,21 @@ def inject_script(resp):
                 resp.content = inj + resp.content
 
 
+@subscribe('response', mode='learning')
+def add_csp_reports(resp):
+    """ Adds the CSP Report-Only header and policy.js for policy generation. """
+    # nonce for request identification (request_id)
+    id = generate_id(32)
+    add_report_header(resp, id)
+    inject_script(resp, id)
+
+
 @subscribe('response', mode='locked')
 def inject_csp(resp):
     """ Injects a CSP to protect the webapp (policy enforcement). """
     db = lib.globals.Globals()['db']
     rules = {}
     for directive, src in db.select(('SELECT directive, uri FROM policy WHERE '
-                                     'document_uri = ?'), (resp.request.path,)):
+                                     'document_uri = ?'), resp.request.path):
         rules.setdefault(directive, []).append(src)
     resp.headers['Content-Security-Policy'] = [lib.csp.generate_policy(rules)]

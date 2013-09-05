@@ -28,24 +28,30 @@ def serve_policy(req):
 @lib.webinterface.path('/_/policy')
 def refine_policy(req):
     """ Refines the policy obtained with the Report-Only header. """
-    if '&' in req.content:
-        data = {}
-        for component in req.content.split('&'):
-            if '=' in component:
-                p, v = component.split('=', 1)
-                data[urllib.unquote(p)] = urllib.unquote(v)
-        if {'sources', 'uri'} > set(data.keys()):
-            raise lib.webinterface.Http400Error()
-        data['sources'] = json.loads(data['sources'])
-        db = lib.globals.Globals()['db']
-        for rule in lib.csp.directives:
-            if rule in data['sources'] and isinstance(data['sources'][rule],
-                                                      list):
-                for insert in data['sources'][rule]:
-                    # XXX: possible performance problem
-                    db.execute('INSERT INTO policy VALUES (NULL, ?, ?, ?)',
-                               (data['uri'], rule, insert))
-    return ''
+    if '&' not in req.content:
+        return
+    data = {}
+    for component in req.content.split('&'):
+        if '=' in component:
+            p, v = component.split('=', 1)
+            data[urllib.unquote(p)] = urllib.unquote(v)
+    if 'sources' not in data or 'uri' not in data or 'id' not in data:
+        raise lib.webinterface.Http400Error('Incomplete policy report.')
+    data['sources'] = json.loads(data['sources'])
+    db = lib.globals.Globals()['db']
+    for directive, uris in data['sources'].items():
+        if directive in lib.csp.directives:
+            for uri in uris:
+                if not db.count('policy WHERE document_uri = ? AND directive = '
+                                '? AND uri = ?', (data['uri'], directive, uri)):
+                    ext_origin = re.match('(^https?://[^/]+)', uri,
+                                          re.I).group(1)
+                    # set unspecific rule to not activated
+                    db.execute('UPDATE policy SET activated = 0 WHERE '
+                               'document_uri = ? AND directive = ? AND uri = ?',
+                               (data['uri'], directive, ext_origin))
+                    db.execute('INSERT INTO policy VALUES (NULL, ?, ?, ?, ?, 1'
+                               ')', (data['uri'], directive, uri, data['id']))
 
 
 @lib.webinterface.path('/_/report')
@@ -54,20 +60,32 @@ def save_report(req):
     data = json.loads(req.content)
     params = req.get_query()
     if 'id' not in params:
-        raise Exception('Violation report lacked an id.')
+        raise lib.webinterface.Http400Error('Violation report lacked an id.')
     if 'csp-report' not in data:
-        raise Exception('csp-report not found in JSON data.')
+        raise lib.webinterface.Http400Error('Incomplete violation report.')
     report = data['csp-report']
-    if ('effective-directive' not in report or 'blocked-uri' not in report
+    if ('violated-directive' not in report or 'blocked-uri' not in report
         or report['blocked-uri'] == '' or 'document-uri' not in report or
-        report['effective-directive'] not in lib.csp.directives):
+        ' ' not in report['violated-directive']):
+        # ignore incomplete or broken reports
         return
-    document_uri = re.sub('^https?://[^/]+', '', report['document-uri'], 1,
-                          re.I)
+    directive = report['violated-directive'].split(' ')[0]
+    if directive not in lib.csp.directives:
+        # ignore broken directives
+        return
+    origin, document_uri = re.match('(^https?://[^/]+)(.*)$',
+                                    report['document-uri'], re.I).groups()
     db = lib.globals.Globals()['db']
-    db.execute(('INSERT OR REPLACE INTO policy VALUES (NULL, :docuri, :dir, '
-                ':uri, :reqid, (SELECT count(count) FROM policy WHERE '
-                'request_id = :reqid) + 1)'),  # counts up to 2
-               {'docuri': document_uri, 'dir': report['effective-directive'],
-                'uri': report['blocked-uri'], 'reqid': params['id'][0]})
-    return
+    """ XXX
+    if (not report['blocked-uri'].startswith(origin) and
+        db.count('policy WHERE document_uri = ? AND directive = ? AND uri '
+                 '= ? AND activated = 0 AND report_id != ?'), ()):
+
+        return
+    """
+    if report['blocked-uri'].startswith('%s/%s/_' % (origin, WEBINTERFACE_URI)):
+        # internal data URIs to learn whitelist
+        document_uri = 'learn'
+    db.execute('INSERT OR IGNORE INTO policy VALUES (NULL, ?, ?, ?, ?, 1)',
+               (document_uri, directive, report['blocked-uri'],
+                params['id'][0]))

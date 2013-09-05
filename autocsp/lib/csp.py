@@ -1,6 +1,7 @@
 
-directives = ('connect-src', 'frame-src', 'img-src', 'media-src', 'object-src',
-              'script-src', 'style-src')
+
+directives = ('connect-src', 'font-src', 'frame-src', 'img-src', 'media-src',
+              'object-src', 'script-src', 'style-src')
 
 
 def generate_policy(rules):

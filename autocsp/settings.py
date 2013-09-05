@@ -1,9 +1,9 @@
 
-# if locked mode is enabled, the CSP policy will be enforced, else the proxy
-# learns about the site first (while browsing it)
+# when locked mode is disabled the proxy will build up a policy which can be
+# enforced when locked mode is enabled again
 LOCKED_MODE = False
 
-# (schema, host, port) which will be reverse proxied
+# (protocol, host, port) which will be reverse proxied
 REVERSE_PROXY = ('http', 'localhost', 8000)
 
 # debug mode enables console logs for developers (auto-disabled in locked mode)

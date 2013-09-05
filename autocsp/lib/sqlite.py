@@ -21,10 +21,7 @@ class ThreadedDatabase(threading.Thread):
             req, arg, res = self.requests.get()
             if req == '--close--':
                 break
-            try:
-                cursor.execute(req, arg)
-            except sqlite3.IntegrityError as e:
-                self.lasterr = e
+            cursor.execute(req, arg)
             connection.commit()
             if res:
                 for record in cursor:
@@ -48,6 +45,13 @@ class ThreadedDatabase(threading.Thread):
             if rec == '--no more--':
                 break
             yield rec
+
+    def get_all(self, req, arg=None):
+        return [r for r in self.select(req, arg)]
+
+    def count(self, what, arg=None):
+        result = self.get_all('SELECT COUNT(id) FROM ' + what, arg)
+        return result[0][0]
 
     def close(self):
         self.execute('--close--')
