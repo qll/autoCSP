@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """ CSP-injecting reverse HTTP proxy with policy auto-generation. """
+import logging
 import optparse
 import os
 
@@ -23,6 +24,8 @@ def main():
     if options.pid != None:
         write_pid_file(options.pid)
     paths = {k: os.path.expanduser(p) for k, p in settings.PATHS.items()}
+    set_up_logging(settings.DEBUG, options.daemonize, paths['LOG'],
+                   settings.LOG_FORMATS)
     load_interceptors(paths['INTERCEPTORS'], settings.INTERCEPTORS)
     load_views(paths['VIEWS'])
     connect_to_db(paths['DATABASE'])
@@ -35,6 +38,7 @@ def main():
     except KeyboardInterrupt:
         controller.shutdown()
         lib.globals.Globals()['db'].close()
+        logging.shutdown()
 
 
 def get_options():
@@ -96,6 +100,33 @@ def load_module(path):
     head, tail = os.path.split(path)
     module, _ = os.path.splitext(tail)
     __import__('%s.%s' % ('.'.join(head.split('/')), module))
+
+
+def set_up_logging(debug, daemonized, log_file, format):
+    """ Sets up the logging module. """
+    if '/' in log_file:
+        path = os.path.split(log_file)[0]
+        # create log directory if not exists, yet
+        if not os.path.isdir(path):
+            os.makedirs(path)
+    logging.logMultiprocessing = 0
+    logging.logProcesses = 0
+    logging.logThreads = 0
+    # get root logger and configure it
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG if debug else logging.INFO)
+    if not daemonized:
+        # no logging to console when daemonized
+        console_handler = logging.StreamHandler()
+        formatter = logging.Formatter(format['CONSOLE'], format['CONSOLE_DATE'])
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+    if log_file:
+        file_handler = logging.FileHandler(log_file)
+        formatter = logging.Formatter(format['FILE'], format['FILE_DATE'])
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+    logger.info('autoCSP started.')
 
 
 def load_interceptors(path, interceptors):

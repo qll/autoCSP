@@ -23,7 +23,18 @@ INTERCEPTORS = (
     'hiddenproxy',  # sends faked HOST header (based on REVERSE_PROXY)
 )
 
+# logging format strings
+LOG_FORMATS = {
+    'CONSOLE': '%(asctime)s [%(name)s/%(levelname)s] %(message)s',
+    'CONSOLE_DATE': '%H:%M',
+    'FILE': '%(asctime)s [%(name)s/%(levelname)s] %(message)s',
+    'FILE_DATE': '%d.%m.%Y %H:%M',
+}
+
+
 PATHS = {
+    # path to log file - leave empty to avoid logging to file
+    'LOG': '',
     # path to sqlite3 database (does not have to exist)
     'DATABASE': 'proxy.sqlite',
     # path to all interceptor functions (w/ trailing slash)
