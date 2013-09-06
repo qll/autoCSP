@@ -9,7 +9,8 @@ from lib.webinterface import make_response, path, Http400Error, Http404Error
 @path('/')
 def index(req):
     """ Displays the index website. """
-    query = 'SELECT document_uri FROM policy GROUP BY document_uri'
+    query = ("SELECT document_uri FROM policy WHERE document_uri!='learn' GROUP"
+             ' BY document_uri')
     uris = [uri[0] for uri in lib.globals.Globals()['db'].select(query)]
     return make_response('index.html', uris=uris)
 
