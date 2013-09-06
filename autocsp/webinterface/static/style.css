@@ -21,10 +21,13 @@ header {
     background: #ebe5df;
     background: linear-gradient(to bottom, #ffffff 0%, #ebe5df 100%);
 }
-h1 {
+hgroup {
     border-top: 4px solid #222;
+}
+h1 {
     font-size: 50px;
     padding: 8px 10px;
+    float: left;
 }
 h1 a {
     color: #3f3029;
@@ -32,10 +35,33 @@ h1 a {
     font-weight: normal;
     text-shadow: 1px 1px 2px #888;
 }
+h1 span {
+    border-radius: 3px;
+}
 h1 a:hover {
     color: #ff3600;
 }
+h2 {
+    float: right;
+    font-size: 20px;
+    width: 150px;
+    text-align: center;
+    line-height: 20px;
+    padding: 8px 0;
+    color: #fff;
+    border-radius: 3px;
+    margin: 9px 10px;
+}
+.learning {
+    background: #3ac440;
+}
+.locked {
+    background: #c43a3a;
+}
+span.learning {
+}
 nav {
+    clear: both;
     padding: 0 2px 2px;
     background: #ebe5df;
 }

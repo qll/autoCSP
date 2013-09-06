@@ -5,7 +5,15 @@
 <link rel="stylesheet" href="{{ base_url }}static/style.css">
 <div id="container">
     <header>
-        <h1><a href="{{ base_url }}">autoCSP</a></h1>
+        <hgroup>
+            <h1>
+                <span class="{{ mode }}">&nbsp;</span>
+                <a href="{{ base_url }}">autoCSP</a>
+            </h1>
+            <h2 class="{{ mode }}">
+                {{ mode }} mode
+            </h2>
+        </hgroup>
         <nav>
             <ul>
                 <li><a href="{{ base_url }}">Overview</a></li>

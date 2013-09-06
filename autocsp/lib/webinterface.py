@@ -5,7 +5,7 @@ import traceback
 import jinja2
 
 from lib.http import status_codes, Response
-from settings import WEBINTERFACE_URI
+from settings import LOCKED_MODE, WEBINTERFACE_URI
 
 
 # closurized dict mapping RegExes to functions
@@ -17,6 +17,7 @@ env = jinja2.Environment(
     loader=jinja2.PackageLoader('webinterface', 'templates'),
     autoescape=True)
 env.globals['base_url'] = '/%s/' % WEBINTERFACE_URI
+env.globals['mode'] = 'locked' if LOCKED_MODE else 'learning'
 
 
 class HttpError(Exception):

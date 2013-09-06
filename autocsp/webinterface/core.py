@@ -23,10 +23,14 @@ def display_policy(req):
     uri = params['uri'][0]
     db = lib.globals.Globals()['db']
     rules = {}
-    for directive, src in db.select(('SELECT directive, uri FROM policy WHERE '
-                                     'document_uri=?'), uri):
-        rules.setdefault(directive, []).append(src)
+    fullrules = []
+    query = ('SELECT id, directive, uri, activated FROM policy WHERE '
+             'document_uri=?')
+    for id, directive, src, active in db.select(query, uri):
+        if active:
+            rules.setdefault(directive, []).append(src)
+        fullrules.append([id, directive, src, active])
     if len(rules) == 0:
         raise Http404Error()
-    return make_response('policy.html', document_uri=uri, rules=rules,
+    return make_response('policy.html', document_uri=uri, rules=fullrules,
                                         policy=lib.csp.generate_policy(rules))

@@ -11,12 +11,8 @@
     <h3>Rules</h3>
     <div id="observed">
         <ul>
-            {% for directive, ruleset in rules.items() %}
-                {% if ruleset != ["'none'"] %}
-                    {% for rule in ruleset %}
-                        <li>{{ directive }}: {{ rule }}</li>
-                    {% endfor %}
-                {% endif %}
+            {% for id, directive, uri, activated in rules %}
+                <li>{{ directive }}: {{ uri }}</li>
             {% endfor %}
         </ul>
     </div>
