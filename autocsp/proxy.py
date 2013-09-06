@@ -14,34 +14,44 @@ from libmproxy import proxy
 
 
 def main():
-    options = get_options()
-    if options.daemonize:
-        daemonize()
-    # change cwd to the directory of this file
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    # create files with 600 and dirs with 700 permissions (63 = 077)
-    os.umask(63)
-    if options.pid != None:
-        write_pid_file(options.pid)
-    paths = {k: os.path.expanduser(p) for k, p in settings.PATHS.items()}
-    set_up_logging(settings.DEBUG, options.daemonize, paths['LOG'],
-                   settings.LOG_FORMATS)
-    load_interceptors(paths['INTERCEPTORS'], settings.INTERCEPTORS)
-    logging.debug('Interceptors loaded.')
-    load_views(paths['VIEWS'])
-    logging.debug('Views loaded.')
-    connect_to_db(paths['DATABASE'])
-    logging.debug('Connected to database.')
-    config = proxy.ProxyConfig(cacert=paths['CACERT'],
-                               reverse_proxy=settings.REVERSE_PROXY)
-    server = proxy.ProxyServer(config, 8080)
-    controller = lib.events.EventController(server)
     try:
+        options = get_options()
+        if options.daemonize:
+            daemonize()
+        # change cwd to the directory of this file
+        os.chdir(os.path.dirname(os.path.abspath(__file__)))
+        # create files with 600 and dirs with 700 permissions (63 = 077)
+        os.umask(63)
+        if options.pid != None:
+            write_pid_file(options.pid)
+        paths = {k: os.path.expanduser(p) for k, p in settings.PATHS.items()}
+        set_up_logging(settings.DEBUG, options.daemonize, paths['LOG'],
+                       settings.LOG_FORMATS)
+        load_interceptors(paths['INTERCEPTORS'], settings.INTERCEPTORS)
+        logging.debug('Interceptors loaded.')
+        load_views(paths['VIEWS'])
+        logging.debug('Views loaded.')
+        connect_to_db(paths['DATABASE'])
+        logging.debug('Connected to database.')
+        config = proxy.ProxyConfig(cacert=paths['CACERT'],
+                                   reverse_proxy=settings.REVERSE_PROXY)
+        server = proxy.ProxyServer(config, 8080)
+        controller = lib.events.EventController(server)
         controller.run()
     except KeyboardInterrupt:
+        pass
+    except Exception as e:
+        logging.exception(e)
+    finally:
         logging.info('Shutting down.')
-        controller.shutdown()
-        lib.globals.Globals()['db'].close()
+        try:
+            controller.shutdown()
+        except:
+            pass
+        try:
+            lib.globals.Globals()['db'].close()
+        except:
+            pass
         logging.shutdown()
 
 
