@@ -16,7 +16,12 @@ WEBINTERFACE_URI = '_autoCSP'
 WEBINTERFACE_AUTH = None
 
 # enabled interceptors (order matters)
-INTERCEPTORS = ('webinterface', 'caching', 'csp')
+INTERCEPTORS = (
+    'webinterface',  # exposes a webinterface
+    'caching',  # disables caching in learning mode
+    'csp',  # injects CSP
+    'hiddenproxy',  # sends faked HOST header (based on REVERSE_PROXY)
+)
 
 PATHS = {
     # path to sqlite3 database (does not have to exist)
