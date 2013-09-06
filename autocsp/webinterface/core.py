@@ -26,7 +26,7 @@ def display_policy(req):
     rules = {}
     fullrules = []
     query = ('SELECT id, directive, uri, activated FROM policy WHERE '
-             'document_uri=?')
+             'document_uri=? ORDER BY directive, uri DESC')
     for id, directive, src, active in db.select(query, uri):
         if active:
             rules.setdefault(directive, []).append(src)

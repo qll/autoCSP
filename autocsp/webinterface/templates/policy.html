@@ -8,13 +8,25 @@
     </div>
 </section>
 <section>
-    <h3>Rules</h3>
-    <div id="observed">
-        <ul>
+    <table class="datatable">
+        <thead>
+            <tr>
+                <td>Directive</td>
+                <td>URI</td>
+                <td>Activated</td>
+            </tr>
+        </thead>
+        <tbody>
             {% for id, directive, uri, activated in rules %}
-                <li>{{ directive }}: {{ uri }}</li>
+                <tr{% if not activated %} class="inactive"{% endif %}>
+                    <td>{{ directive }}</td>
+                    <td>{{ uri }}</td>
+                    <td>
+                        <input type="checkbox" value="1"{% if activated %} checked{% endif %}>
+                    </td>
+                </tr>
             {% endfor %}
-        </ul>
-    </div>
+        </tbody>
+    </table>
 </section>
 {% endblock %}

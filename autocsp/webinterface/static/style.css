@@ -53,12 +53,10 @@ h2 {
     margin: 9px 10px;
 }
 .learning {
-    background: #3ac440;
-}
-.locked {
     background: #c43a3a;
 }
-span.learning {
+.locked {
+    background: #3ac440;
 }
 nav {
     clear: both;
@@ -153,4 +151,35 @@ footer div {
 }
 #policy {
     font-family: monospace;
+}
+.datatable {
+    width: 100%;
+}
+.datatable thead {
+    background: #ebe5df;
+    background: linear-gradient(to bottom, #ffffff 0%, #ebe5df 100%);
+    color: #3f3029;
+    font-size: 18px;
+    font-weight: normal;
+}
+.datatable thead td {
+    padding: 3px 5px;
+    border-right: 1px solid #ccc;
+}
+.datatable thead td:last-child {
+    border: 0;
+}
+.datatable tbody tr {
+}
+.datatable tbody tr td {
+    border-top: 1px solid #ccc;
+    background: #fafafa;
+    padding: 5px;
+}
+.datatable tbody tr:nth-child(even) td {
+    background: #f1f1f1;
+}
+.datatable tbody tr.inactive td {
+    color: #888;
+    text-decoration: line-through;
 }
