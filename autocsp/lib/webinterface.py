@@ -64,7 +64,7 @@ class path(object):
         self.path = re.compile('^%s$' % regex)
 
     def __call__(self, function):
-        views[self.path] = function
+        views[self.path] = {'function': function}
         return function
 
 
@@ -86,11 +86,11 @@ def wrap_response(val):
 def call_view(req, path):
     """ Selects a function with a matching RegEx and executes it. """
     response = Response(content='404 - Not Found', status_code=404)
-    for regex, function in views.items():
+    for regex, view in views.items():
         match = regex.match(path)
         if match:
             try:
-                response = wrap_response(function(req, *match.groups()))
+                response = wrap_response(view['function'](req, *match.groups()))
             except HttpError as e:
                 response = e.build_response()
             except Exception as e:
