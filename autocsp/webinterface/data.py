@@ -64,6 +64,7 @@ def save_report(req):
     if 'csp-report' not in data:
         raise lib.webinterface.Http400Error('Incomplete violation report.')
     report = data['csp-report']
+    request_id = params['id'][0]
     if ('violated-directive' not in report or 'blocked-uri' not in report
         or report['blocked-uri'] == '' or 'document-uri' not in report or
         ' ' not in report['violated-directive']):
@@ -76,16 +77,22 @@ def save_report(req):
     origin, document_uri = re.match('(^https?://[^/]+)(.*)$',
                                     report['document-uri'], re.I).groups()
     db = lib.globals.Globals()['db']
-    """ XXX
-    if (not report['blocked-uri'].startswith(origin) and
-        db.count('policy WHERE document_uri = ? AND directive = ? AND uri '
-                 '= ? AND activated = 0 AND report_id != ?'), ()):
-
-        return
-    """
+    if not report['blocked-uri'].startswith(origin):
+        id = db.fetch_one('SELECT id FROM policy WHERE document_uri=? AND '
+                          'directive=? AND uri=? AND activated=0 AND '
+                          'request_id!=?', (document_uri, directive,
+                                            report['blocked-uri'], request_id))
+        if id:
+            id = id[0]
+            # refined policy is missing something - disable all refinements :(
+            db.execute('UPDATE policy SET activated=1, request_id=? WHERE id=?',
+                       (request_id, id))
+            db.execute('UPDATE policy SET activated=0 WHERE document_uri=? AND'
+                       ' directive=? AND uri LIKE ?',
+                       (document_uri, directive, report['blocked-uri'] + '/%'))
+            return
     if report['blocked-uri'].startswith('%s/%s/_' % (origin, WEBINTERFACE_URI)):
         # internal data URIs to learn whitelist
         document_uri = 'learn'
     db.execute('INSERT OR IGNORE INTO policy VALUES (NULL, ?, ?, ?, ?, 1)',
-               (document_uri, directive, report['blocked-uri'],
-                params['id'][0]))
+               (document_uri, directive, report['blocked-uri'], request_id))

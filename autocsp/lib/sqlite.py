@@ -53,5 +53,11 @@ class ThreadedDatabase(threading.Thread):
         result = self.get_all('SELECT COUNT(id) FROM ' + what, arg)
         return result[0][0]
 
+    def fetch_one(self, req, arg=None):
+        try:
+            return self.select(req, arg).next()
+        except StopIteration:
+            return None
+
     def close(self):
         self.execute('--close--')

@@ -38,8 +38,8 @@ def add_report_header(resp, id):
     db = lib.globals.Globals()['db']
     rules = {}
     for directive, src in db.select('SELECT directive, uri FROM policy WHERE '
-                                    'document_uri = ? OR document_uri = '
-                                    "'learn'", resp.request.path):
+                                    'activated=1 AND document_uri=? OR '
+                                    "document_uri='learn'", resp.request.path):
         rules.setdefault(directive, []).append(src)
     policy = lib.csp.generate_policy(rules)
     policy += '; report-uri /%s/_/report?id=%s' % (WEBINTERFACE_URI, id)
@@ -81,7 +81,8 @@ def inject_csp(resp):
     """ Injects a CSP to protect the webapp (policy enforcement). """
     db = lib.globals.Globals()['db']
     rules = {}
-    for directive, src in db.select(('SELECT directive, uri FROM policy WHERE '
-                                     'document_uri = ?'), resp.request.path):
+    for directive, src in db.select('SELECT directive, uri FROM policy WHERE '
+                                    'document_uri=? AND activated=1',
+                                    resp.request.path):
         rules.setdefault(directive, []).append(src)
     resp.headers['Content-Security-Policy'] = [lib.csp.generate_policy(rules)]

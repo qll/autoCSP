@@ -1,3 +1,4 @@
+
 """ Basic web interface. """
 import lib.csp
 import lib.globals
@@ -23,7 +24,7 @@ def display_policy(req):
     db = lib.globals.Globals()['db']
     rules = {}
     for directive, src in db.select(('SELECT directive, uri FROM policy WHERE '
-                                     'document_uri = ?'), uri):
+                                     'document_uri=?'), uri):
         rules.setdefault(directive, []).append(src)
     if len(rules) == 0:
         raise Http404Error()
