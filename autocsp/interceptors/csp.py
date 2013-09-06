@@ -85,4 +85,5 @@ def inject_csp(resp):
                                     'document_uri=? AND activated=1',
                                     resp.request.path):
         rules.setdefault(directive, []).append(src)
-    resp.headers['Content-Security-Policy'] = [lib.csp.generate_policy(rules)]
+    policy = "default-src 'none'; " + lib.csp.generate_policy(rules)
+    resp.headers['Content-Security-Policy'] = [policy]
