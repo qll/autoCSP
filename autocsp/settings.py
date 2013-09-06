@@ -6,7 +6,7 @@ LOCKED_MODE = False
 # (protocol, host, port) which will be reverse proxied
 REVERSE_PROXY = ('http', 'localhost', 8000)
 
-# debug mode enables console logs for developers (auto-disabled in locked mode)
+# debug mode enables more logging messages (in JS and console)
 DEBUG = True
 
 # URI path prefix for internal autoCSP URLs (webinterface)
@@ -26,7 +26,7 @@ INTERCEPTORS = (
 # logging format strings
 LOG_FORMATS = {
     'CONSOLE': '%(asctime)s [%(name)s/%(levelname)s] %(message)s',
-    'CONSOLE_DATE': '%H:%M',
+    'CONSOLE_DATE': '%H:%M:%S',
     'FILE': '%(asctime)s [%(name)s/%(levelname)s] %(message)s',
     'FILE_DATE': '%d.%m.%Y %H:%M',
 }

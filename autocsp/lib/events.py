@@ -1,11 +1,13 @@
 """ Event system. Able to call multiple event handlers on one event.
     Currently used events: request, response, db_init. """
-import sys
-import traceback
+import logging
 
 from libmproxy import controller
 
 from settings import LOCKED_MODE
+
+
+logger = logging.getLogger(__name__)
 
 
 # closurized events dictionary
@@ -46,29 +48,22 @@ class EventController(controller.Master):
     def run(self):
         return controller.Master.run(self)
 
-    def call(self, event, msg):
-        """ Calls event with message parameter. """
-        call(event, msg)
-
     def handle(self, msg):
         """ Handles internal controller event and distributes it to all
             subscribed listeners. """
         try:
-            self.call(msg.__class__.__name__.lower(), msg)
+            call(msg.__class__.__name__.lower(), msg)
             msg.reply()
-        except Exception:
-            # TODO(qll): implement logging
-            _, e, tb = sys.exc_info()
-            print('Error: %s' % e)
-            print('Traceback:')
-            traceback.print_tb(tb)
-            del tb
+        except Exception as e:
+            logger.exception(e)
 
 
 def call(event, *args):
     """ Calls events with arbitrary parameters. """
-    try:
-        for function in events.get(event, []):
+    for function in events.get(event, []):
+        try:
             function(*args)
-    except EventPropagationStop:
-        pass
+        except EventPropagationStop:
+            break
+        except Exception as e:
+            logger.exception(e)

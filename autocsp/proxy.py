@@ -27,8 +27,11 @@ def main():
     set_up_logging(settings.DEBUG, options.daemonize, paths['LOG'],
                    settings.LOG_FORMATS)
     load_interceptors(paths['INTERCEPTORS'], settings.INTERCEPTORS)
+    logging.debug('Interceptors loaded.')
     load_views(paths['VIEWS'])
+    logging.debug('Views loaded.')
     connect_to_db(paths['DATABASE'])
+    logging.debug('Connected to database.')
     config = proxy.ProxyConfig(cacert=paths['CACERT'],
                                reverse_proxy=settings.REVERSE_PROXY)
     server = proxy.ProxyServer(config, 8080)
@@ -36,6 +39,7 @@ def main():
     try:
         controller.run()
     except KeyboardInterrupt:
+        logging.info('Shutting down.')
         controller.shutdown()
         lib.globals.Globals()['db'].close()
         logging.shutdown()
@@ -126,7 +130,6 @@ def set_up_logging(debug, daemonized, log_file, format):
         formatter = logging.Formatter(format['FILE'], format['FILE_DATE'])
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
-    logger.info('autoCSP started.')
 
 
 def load_interceptors(path, interceptors):

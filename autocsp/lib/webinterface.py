@@ -1,6 +1,5 @@
+import logging
 import re
-import sys
-import traceback
 
 import jinja2
 
@@ -95,11 +94,6 @@ def call_view(req, path):
                 response = e.build_response()
             except Exception as e:
                 response = Http500Error().build_response()
-                # TODO(qll): implement logging
-                _, e, tb = sys.exc_info()
-                print('Error: %s' % e)
-                print('Traceback:')
-                traceback.print_tb(tb)
-                del tb
+                logging.getLogger(__name__).exception(e)
             break
     return response
