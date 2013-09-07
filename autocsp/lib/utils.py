@@ -17,5 +17,5 @@ class Globals(object):
 def assemble_origin(origin):
     if not isinstance(origin, (tuple, list)):
         return origin
-    return '%s://%s%s' % (origin[0], origin[1], ':%s' % origin[2]
+    return '%s://%s%s' % (origin[0], origin[1], ':%d' % origin[2]
                                                 if origin[2] != 80 else '')

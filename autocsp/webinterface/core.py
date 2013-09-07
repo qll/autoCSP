@@ -6,7 +6,10 @@ import lib.utils
 from lib.webinterface import make_response, path, Http400Error, Http404Error
 
 
-@path('/')
+style = '%(autocsp)s/static/style.css'
+
+
+@path('/', csp={'style-src': [style]})
 def index(req):
     """ Displays the index website. """
     query = ("SELECT document_uri FROM policy WHERE document_uri!='learn' GROUP"
@@ -15,7 +18,7 @@ def index(req):
     return make_response('index.html', uris=uris)
 
 
-@path('/policy')
+@path('/policy', csp={'style-src': [style]})
 def display_policy(req):
     """ Displays details of a policy. """
     params = req.get_query()

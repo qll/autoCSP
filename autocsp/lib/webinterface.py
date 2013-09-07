@@ -1,10 +1,12 @@
+import jinja2
 import logging
 import re
 
-import jinja2
+import lib.csp
+import lib.utils
 
 from lib.http import status_codes, Response
-from settings import LOCKED_MODE, WEBINTERFACE_URI
+from settings import ORIGIN, LOCKED_MODE, WEBINTERFACE_URI
 
 
 # closurized dict mapping RegExes to functions
@@ -59,11 +61,18 @@ class Http500Error(HttpError):
 
 class path(object):
     """ Path decorator. Maps a function to a URI RegEx. """
-    def __init__(self, regex):
+    def __init__(self, regex, csp={}):
         self.path = re.compile('^%s$' % regex)
+        self.csp = {}
+        for directive, uris in csp.items():
+            for uri in uris:
+                fulluri = uri % {'autocsp': '%s/%s' %
+                                            (lib.utils.assemble_origin(ORIGIN),
+                                             WEBINTERFACE_URI)}
+                self.csp.setdefault(directive, []).append(fulluri)
 
     def __call__(self, function):
-        views[self.path] = {'function': function}
+        views[self.path] = {'function': function, 'csp': self.csp}
         return function
 
 
@@ -88,12 +97,16 @@ def call_view(req, path):
     for regex, view in views.items():
         match = regex.match(path)
         if match:
+            csp = {}
             try:
                 response = wrap_response(view['function'](req, *match.groups()))
+                csp = view['csp']
             except HttpError as e:
                 response = e.build_response()
             except Exception as e:
                 response = Http500Error().build_response()
                 logging.getLogger(__name__).exception(e)
+            response.set_header('Content-Security-Policy',
+                                lib.csp.generate_policy(csp))
             break
     return response
