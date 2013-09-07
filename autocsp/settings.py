@@ -1,40 +1,64 @@
+""" autoCSP configuration file. """
 
-# when locked mode is disabled the proxy will build up a policy which can be
-# enforced when locked mode is enabled again
+# Locked mode is one of the two modes of the autoCSP reverse HTTP proxy:
+# Learning mode: When locked mode is disabled (False) the proxy will be in
+#                learning mode. This mode is used to learn the benign structure
+#                and markup of the site and build a Content Security Policy for
+#                all document URIs. The site has to be browsed in this mode, so
+#                that the proxy can collect violation reports and inject
+#                JavaScript to generate a policy.
+#                Warning: Please do not allow public access to the proxy in
+#                learning mode. An attacker could loosen up the policies in
+#                learning mode so that the policy could be useless.
+# Locked mode: Locked mode can be enabled with setting the variable to True.
+#              The proxy will enforce the policy built in learning mode on the
+#              document URIs it knows. It tries to use a heuristic to detect
+#              unknown but similar document URIs.
 LOCKED_MODE = False
 
-# (protocol, host, port) of the server reverse proxied
+
+# The HTTP Origin of the server which should be protected.
+# Tuple of (protocol, host, port).
+# If proxying does not seem to work, please enable the hiddenproxy interceptor.
 REVERSE_PROXY = ('http', 'localhost', 8000)
 
-# the web origin this reverse proxy represents (protocol, host, port)
+
+# HTTP Origin of autoCSP. The proxy needs its own address to build policies.
+# Can be changed later on to protect the same ressource under a different URL.
 ORIGIN = ('http', 'localhost', 8080)
 
-# debug mode enables more logging messages (in JS and console)
+
+# Debug mode enables more and more detailed logging messages.
 DEBUG = True
 
-# HTTP Basic Authentication for complete website. None or ('user', 'pass').
+
+# HTTP Basic Authentication credentials. None or ('user', 'pass').
 AUTH = {
-    'learning': None,
-    'locked': None,
-    'webinterface': None,  # override for web interface of the proxy
+    'learning': None,  # Auth for the web app in learning mode.
+    'locked': None,  # Auth for the web app in locked mode.
+    'webinterface': None,  # Override auth for the web interface of the proxy.
 }
 
-# URI path prefix for internal autoCSP URLs (webinterface)
+
+# URI path prefix for internal autoCSP URLs (web interface).
 WEBINTERFACE_URI = '_autoCSP'
 
-# enable web interface in locked mode (only when AUTH['webinterface'] set)
+
+# Enable web interface in locked mode (only when AUTH['webinterface'] set).
 LOCKED_WEBINTERFACE = True
 
-# enabled interceptors (order matters)
+
+# Enabled interceptors (order matters).
 INTERCEPTORS = (
-    'auth',  # HTTP Basic Authentication - should stay at top
-    'webinterface',  # exposes a webinterface
-    'caching',  # disables caching in learning mode
-    'csp',  # injects CSP
-    #'hiddenproxy',  # sends faked HOST header (based on REVERSE_PROXY)
+    'caching',  # Disables caching in learning mode.
+    'auth',  # HTTP Basic Authentication - should stay abvoe webinterface.
+    'webinterface',  # Exposes a web interface.
+    'csp',  # Injects CSPs into HTTP headers.
+    #'hiddenproxy',  # Sends faked HOST header (based on REVERSE_PROXY).
 )
 
-# logging format strings
+
+# Logging format strings.
 LOG_FORMATS = {
     'CONSOLE': '%(asctime)s [%(name)s/%(levelname)s] %(message)s',
     'CONSOLE_DATE': '%H:%M:%S',
@@ -44,14 +68,14 @@ LOG_FORMATS = {
 
 
 PATHS = {
-    # path to log file - leave empty to avoid logging to file
+    # Path to log file - leave empty to avoid logging to file.
     'LOG': '',
-    # path to sqlite3 database (does not have to exist)
+    # Path to sqlite3 database (does not have to exist).
     'DATABASE': 'proxy.sqlite',
-    # path to all interceptor functions (w/ trailing slash)
+    # Path to all interceptor functions (w/ trailing slash).
     'INTERCEPTORS': 'interceptors/',
-    # path to all View functions (w/ trailing slash)
+    # Path to all View functions (w/ trailing slash).
     'VIEWS': 'webinterface/',
-    # path to the CA certificate
+    # Path to the CA certificate.
     'CACERT': '~/.mitmproxy/mitmproxy-ca.pem',
 }
