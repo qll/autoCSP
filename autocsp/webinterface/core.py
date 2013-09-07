@@ -2,28 +2,29 @@
 """ Basic web interface. """
 import lib.csp
 import lib.utils
-
-from lib.webinterface import make_response, path, Http400Error, Http404Error
+import lib.webinterface
 
 
 style = '%(autocsp)s/static/style.css'
 
 
-@path('/', csp={'style-src': [style]})
+@lib.webinterface.csp({'style-src': [style]})
+@lib.webinterface.path('/')
 def index(req):
     """ Displays the index website. """
     query = ("SELECT document_uri FROM policy WHERE document_uri!='learn' GROUP"
              ' BY document_uri')
     uris = [uri[0] for uri in lib.utils.Globals()['db'].select(query)]
-    return make_response('index.html', uris=uris)
+    return lib.webinterface.make_response('index.html', uris=uris)
 
 
-@path('/policy', csp={'style-src': [style]})
+@lib.webinterface.csp({'style-src': [style]})
+@lib.webinterface.path('/policy')
 def display_policy(req):
     """ Displays details of a policy. """
     params = req.get_query()
     if 'uri' not in params:
-        raise Http400Error()
+        raise lib.webinterface.Http400Error()
     uri = params['uri'][0]
     db = lib.utils.Globals()['db']
     rules = {}
@@ -35,6 +36,7 @@ def display_policy(req):
             rules.setdefault(directive, []).append(src)
         fullrules.append([id, directive, src, active])
     if len(rules) == 0:
-        raise Http404Error()
-    return make_response('policy.html', document_uri=uri, rules=fullrules,
-                                        policy=lib.csp.generate_policy(rules))
+        raise lib.webinterface.Http404Error()
+    return lib.webinterface.make_response('policy.html', document_uri=uri,
+                                          rules=fullrules,
+                                          policy=lib.csp.generate_policy(rules))

@@ -59,10 +59,9 @@ class Http500Error(HttpError):
         HttpError.__init__(self, 500, msg)
 
 
-class path(object):
-    """ Path decorator. Maps a function to a URI RegEx. """
-    def __init__(self, regex, csp={}):
-        self.path = re.compile('^%s$' % regex)
+class csp(object):
+    """ Defines a CSP for a view. """
+    def __init__(self, csp):
         self.csp = {}
         for directive, uris in csp.items():
             for uri in uris:
@@ -72,7 +71,24 @@ class path(object):
                 self.csp.setdefault(directive, []).append(fulluri)
 
     def __call__(self, function):
-        views[self.path] = {'function': function, 'csp': self.csp}
+        key = ''
+        for path, view in views.items():
+            if view['function'] == function:
+                key = path
+                break
+        if not key:
+            raise ValueError('%s is not a view.' % function.func_name)
+        views[key]['csp'] = self.csp
+        return function
+
+
+class path(object):
+    """ Path decorator. Maps a function to a URI RegEx. """
+    def __init__(self, regex):
+        self.path = re.compile('^%s$' % regex)
+
+    def __call__(self, function):
+        views[self.path] = {'function': function}
         return function
 
 
@@ -106,7 +122,8 @@ def call_view(req, path):
             csp = {}
             try:
                 response = wrap_response(view['function'](req, *match.groups()))
-                csp = view['csp']
+                if 'csp' in view:
+                    csp = view['csp']
             except HttpError as e:
                 response = e.build_response()
             except Exception as e:
