@@ -1,5 +1,6 @@
 """ Slightly modified version of Louis Riviere's recipe
     http://code.activestate.com/recipes/526618/ (MIT license). """
+import logging
 import sqlite3
 import threading
 
@@ -18,15 +19,18 @@ class ThreadedDatabase(threading.Thread):
         connection = sqlite3.connect(self.path)
         cursor = connection.cursor()
         while True:
-            req, arg, res = self.requests.get()
-            if req == '--close--':
-                break
-            cursor.execute(req, arg)
-            connection.commit()
-            if res:
-                for record in cursor:
-                    res.put(record)
-                res.put('--no more--')
+            try:
+                req, arg, res = self.requests.get()
+                if req == '--close--':
+                    break
+                cursor.execute(req, arg)
+                connection.commit()
+                if res:
+                    for record in cursor:
+                        res.put(record)
+                    res.put('--no more--')
+            except Exception as e:
+                logging.getLogger(__name__).exception(e)
         connection.close()
 
     def execute(self, req, arg=None, res=None):
