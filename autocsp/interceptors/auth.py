@@ -19,7 +19,6 @@ elif AUTH['learning']:
     mode = 'learning'
 elif AUTH['locked']:
     mode = 'locked'
-logger.debug('HTTP Basic Auth in %s mode.' % mode)
 
 
 def check_credentials(credentials, headers):
@@ -31,6 +30,8 @@ def check_credentials(credentials, headers):
 
 
 if mode:
+    logger.debug('HTTP Basic Auth is enabled.')
+
     @subscribe('request', mode=mode)
     def add_auth(req):
         """ Adds HTTP Basic Authentication to the web application. """

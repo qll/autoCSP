@@ -31,7 +31,7 @@ INTERCEPTORS = (
     'webinterface',  # exposes a webinterface
     'caching',  # disables caching in learning mode
     'csp',  # injects CSP
-    'hiddenproxy',  # sends faked HOST header (based on REVERSE_PROXY)
+    #'hiddenproxy',  # sends faked HOST header (based on REVERSE_PROXY)
 )
 
 # logging format strings
