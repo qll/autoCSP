@@ -4,7 +4,7 @@ import re
 import urllib
 
 import lib.csp
-import lib.globals
+import lib.utils
 import lib.http
 import lib.webinterface
 import webinterface.static
@@ -38,7 +38,7 @@ def refine_policy(req):
     if 'sources' not in data or 'uri' not in data or 'id' not in data:
         raise lib.webinterface.Http400Error('Incomplete policy report.')
     data['sources'] = json.loads(data['sources'])
-    db = lib.globals.Globals()['db']
+    db = lib.utils.Globals()['db']
     for directive, uris in data['sources'].items():
         if directive in lib.csp.directives:
             for uri in uris:
@@ -76,7 +76,7 @@ def save_report(req):
         return
     origin, document_uri = re.match('(^https?://[^/]+)(.*)$',
                                     report['document-uri'], re.I).groups()
-    db = lib.globals.Globals()['db']
+    db = lib.utils.Globals()['db']
     if not report['blocked-uri'].startswith(origin):
         id = db.fetch_one('SELECT id FROM policy WHERE document_uri=? AND '
                           'directive=? AND uri=? AND activated=0 AND '

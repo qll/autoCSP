@@ -12,3 +12,10 @@ class Globals(object):
     def __setitem__(self, key, val):
         """ Enables dict-like access: Globals()['key'] = 1 """
         self._vars[key] = val
+
+
+def assemble_origin(origin):
+    if not isinstance(origin, (tuple, list)):
+        return origin
+    return '%s://%s%s' % (origin[0], origin[1], ':%s' % origin[2]
+                                                if origin[2] != 80 else '')

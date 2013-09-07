@@ -6,7 +6,7 @@ import optparse
 import os
 
 import lib.events
-import lib.globals
+import lib.utils
 import lib.sqlite
 import settings
 
@@ -35,8 +35,10 @@ def main():
         logging.debug('Connected to database.')
         config = proxy.ProxyConfig(cacert=paths['CACERT'],
                                    reverse_proxy=settings.REVERSE_PROXY)
-        server = proxy.ProxyServer(config, 8080)
+        server = proxy.ProxyServer(config, settings.ORIGIN[2])
         controller = lib.events.EventController(server)
+        logging.info('Reverse proxy available at %s/' %
+                     lib.utils.assemble_origin(settings.ORIGIN))
         controller.run()
     except KeyboardInterrupt:
         pass
@@ -49,7 +51,7 @@ def main():
         except:
             pass
         try:
-            lib.globals.Globals()['db'].close()
+            lib.utils.Globals()['db'].close()
         except:
             pass
         logging.shutdown()
@@ -100,7 +102,7 @@ def connect_to_db(path):
     """ Connects to the sqlite3 database and initializes it if needed. """
     database_existed = os.path.isfile(path)
     db = lib.sqlite.ThreadedDatabase(path)
-    lib.globals.Globals()['db'] = db
+    lib.utils.Globals()['db'] = db
     if not database_existed:
         lib.events.call('db_init', db)
 

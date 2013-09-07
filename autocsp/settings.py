@@ -3,8 +3,11 @@
 # enforced when locked mode is enabled again
 LOCKED_MODE = False
 
-# (protocol, host, port) which will be reverse proxied
+# (protocol, host, port) of the server reverse proxied
 REVERSE_PROXY = ('http', 'localhost', 8000)
+
+# the web origin this reverse proxy represents (protocol, host, port)
+ORIGIN = ('http', 'localhost', 8080)
 
 # debug mode enables more logging messages (in JS and console)
 DEBUG = True

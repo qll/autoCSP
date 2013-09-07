@@ -1,7 +1,7 @@
 
 """ Basic web interface. """
 import lib.csp
-import lib.globals
+import lib.utils
 
 from lib.webinterface import make_response, path, Http400Error, Http404Error
 
@@ -11,7 +11,7 @@ def index(req):
     """ Displays the index website. """
     query = ("SELECT document_uri FROM policy WHERE document_uri!='learn' GROUP"
              ' BY document_uri')
-    uris = [uri[0] for uri in lib.globals.Globals()['db'].select(query)]
+    uris = [uri[0] for uri in lib.utils.Globals()['db'].select(query)]
     return make_response('index.html', uris=uris)
 
 
@@ -22,7 +22,7 @@ def display_policy(req):
     if 'uri' not in params:
         raise Http400Error()
     uri = params['uri'][0]
-    db = lib.globals.Globals()['db']
+    db = lib.utils.Globals()['db']
     rules = {}
     fullrules = []
     query = ('SELECT id, directive, uri, activated FROM policy WHERE '

@@ -3,7 +3,7 @@ import re
 import string
 
 import lib.csp
-import lib.globals
+import lib.utils
 
 from lib.events import subscribe
 from settings import WEBINTERFACE_URI
@@ -35,7 +35,7 @@ def generate_id(length):
 
 def add_report_header(resp, id):
     """ Adds a Report-Only CSP header (policy generation). """
-    db = lib.globals.Globals()['db']
+    db = lib.utils.Globals()['db']
     rules = {}
     for directive, src in db.select('SELECT directive, uri FROM policy WHERE '
                                     'activated=1 AND document_uri=? OR '
@@ -79,7 +79,7 @@ def add_csp_reports(resp):
 @subscribe('response', mode='locked')
 def inject_csp(resp):
     """ Injects a CSP to protect the webapp (policy enforcement). """
-    db = lib.globals.Globals()['db']
+    db = lib.utils.Globals()['db']
     rules = {}
     for directive, src in db.select('SELECT directive, uri FROM policy WHERE '
                                     'document_uri=? AND activated=1',
