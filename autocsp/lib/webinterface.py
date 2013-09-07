@@ -41,7 +41,7 @@ class Http401Error(HttpError):
     """ Client has to authenticate to view the website. """
     def __init__(self, realm, msg=''):
         self.realm = realm
-        HttpError.__init__(self, msg if msg else '401 - Unauthorized')
+        HttpError.__init__(self, 401)
 
     def build_response(self):
         r = Response(content=self.message, status_code=401)
@@ -74,6 +74,12 @@ class path(object):
     def __call__(self, function):
         views[self.path] = {'function': function, 'csp': self.csp}
         return function
+
+
+def is_webinterface(path):
+    """ Decides if URI is part of the webinterface given the path components.
+    """
+    return True if len(path) and path[0] == WEBINTERFACE_URI else False
 
 
 def render_template(template, **kwargs):

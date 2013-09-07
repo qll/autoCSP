@@ -27,6 +27,8 @@ def main():
         paths = {k: os.path.expanduser(p) for k, p in settings.PATHS.items()}
         set_up_logging(settings.DEBUG, options.daemonize, paths['LOG'],
                        settings.LOG_FORMATS)
+        logging.info('Starting in %s mode.' % ('locked' if settings.LOCKED_MODE
+                                                        else 'learning'))
         load_interceptors(paths['INTERCEPTORS'], settings.INTERCEPTORS)
         logging.debug('Interceptors loaded.')
         load_views(paths['VIEWS'])

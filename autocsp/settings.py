@@ -12,14 +12,22 @@ ORIGIN = ('http', 'localhost', 8080)
 # debug mode enables more logging messages (in JS and console)
 DEBUG = True
 
+# HTTP Basic Authentication for complete website. None or ('user', 'pass').
+AUTH = {
+    'learning': None,
+    'locked': None,
+    'webinterface': None,  # override for web interface of the proxy
+}
+
 # URI path prefix for internal autoCSP URLs (webinterface)
 WEBINTERFACE_URI = '_autoCSP'
 
-# HTTP Basic Authentication for the web interface. None or ('user', 'pass').
-WEBINTERFACE_AUTH = None
+# enable web interface in locked mode (only when AUTH['webinterface'] set)
+LOCKED_WEBINTERFACE = True
 
 # enabled interceptors (order matters)
 INTERCEPTORS = (
+    'auth',  # HTTP Basic Authentication - should stay at top
     'webinterface',  # exposes a webinterface
     'caching',  # disables caching in learning mode
     'csp',  # injects CSP
