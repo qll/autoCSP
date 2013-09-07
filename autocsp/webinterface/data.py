@@ -71,17 +71,21 @@ def save_report(req):
         # ignore incomplete or broken reports
         return
     directive = report['violated-directive'].split(' ')[0]
+    blocked_uri = report['blocked-uri']
     if directive not in lib.csp.directives:
         # ignore broken directives
         return
     origin, document_uri = re.match('(^https?://[^/]+)(.*)$',
                                     report['document-uri'], re.I).groups()
     db = lib.utils.Globals()['db']
-    if not report['blocked-uri'].startswith(origin):
+    if blocked_uri.startswith(origin):
+        # cut same origin URIs so that they start with /
+        blocked_uri = blocked_uri[len(origin):]
+    else:
         id = db.fetch_one('SELECT id FROM policy WHERE document_uri=? AND '
                           'directive=? AND uri=? AND activated=0 AND '
                           'request_id!=?', (document_uri, directive,
-                                            report['blocked-uri'], request_id))
+                                            blocked_uri, request_id))
         if id:
             id = id[0]
             # refined policy is missing something - disable all refinements :(
@@ -91,8 +95,8 @@ def save_report(req):
                        ' directive=? AND uri LIKE ?',
                        (document_uri, directive, report['blocked-uri'] + '/%'))
             return
-    if report['blocked-uri'].startswith('%s/%s/_' % (origin, WEBINTERFACE_URI)):
+    if blocked_uri.startswith('/%s/_' % WEBINTERFACE_URI):
         # internal data URIs to learn whitelist
         document_uri = 'learn'
     db.execute('INSERT OR IGNORE INTO policy VALUES (NULL, ?, ?, ?, ?, 1)',
-               (document_uri, directive, report['blocked-uri'], request_id))
+               (document_uri, directive, blocked_uri, request_id))
