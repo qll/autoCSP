@@ -50,6 +50,7 @@ LOCKED_WEBINTERFACE = True
 
 # Enabled interceptors (order matters).
 INTERCEPTORS = (
+    'correcthost',  # Force correct HTTP Host header (compared to ORIGIN).
     'caching',  # Disables caching in learning mode.
     'auth',  # HTTP Basic Authentication - should stay abvoe webinterface.
     'webinterface',  # Exposes a web interface.
