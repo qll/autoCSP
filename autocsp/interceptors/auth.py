@@ -29,19 +29,21 @@ def check_credentials(credentials, headers):
                  else False)
 
 
+@subscribe('request')
+def prevent_unauthed_webinterface(req):
+    if lib.webinterface.is_webinterface(req.get_path_components()):
+        if LOCKED_MODE and not AUTH['webinterface']:
+            raise EventPropagationStop()
+
+
 if mode:
     logger.debug('HTTP Basic Auth is enabled.')
 
     @subscribe('request', mode=mode)
     def add_auth(req):
         """ Adds HTTP Basic Authentication to the web application. """
-        path = req.get_path_components()
         credentials = list()
-        if lib.webinterface.is_webinterface(path):
-            if ((LOCKED_MODE and not LOCKED_WEBINTERFACE) or
-                (LOCKED_MODE and not AUTH['webinterface'])):
-                # prevent web interface to show up
-                raise EventPropagationStop()
+        if lib.webinterface.is_webinterface(req.get_path_components()):
             credentials = (AUTH['webinterface'] if AUTH['webinterface']
                                                 else AUTH['learning'])
         elif LOCKED_MODE and AUTH['locked']:
