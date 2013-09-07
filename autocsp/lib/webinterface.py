@@ -76,19 +76,20 @@ class csp(object):
             if view['function'] == function:
                 key = path
                 break
-        if not key:
-            raise ValueError('%s is not a view.' % function.func_name)
-        views[key]['csp'] = self.csp
+        if key:
+            views[key]['csp'] = self.csp
         return function
 
 
 class path(object):
     """ Path decorator. Maps a function to a URI RegEx. """
-    def __init__(self, regex):
+    def __init__(self, regex, mode='learning'):
         self.path = re.compile('^%s$' % regex)
+        self.enabled = lib.utils.resolve_mode(mode)
 
     def __call__(self, function):
-        views[self.path] = {'function': function}
+        if self.enabled and self.path not in views:
+            views[self.path] = {'function': function}
         return function
 
 

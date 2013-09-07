@@ -1,4 +1,3 @@
-
 """ Basic web interface. """
 import lib.csp
 import lib.utils
@@ -16,6 +15,12 @@ def index(req):
              ' BY document_uri')
     uris = [uri[0] for uri in lib.utils.Globals()['db'].select(query)]
     return lib.webinterface.make_response('index.html', uris=uris)
+
+
+@lib.webinterface.csp({'style-src': [style]})
+@lib.webinterface.path('/', mode='locked')
+def locked_index(req):
+    return lib.webinterface.make_response('locked_index.html')
 
 
 @lib.webinterface.csp({'style-src': [style]})

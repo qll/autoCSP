@@ -13,7 +13,7 @@ mime_types = {
 }
 
 
-@path('(/static/[\w\./]+)')
+@path('(/static/[\w\./]+)', mode='*')
 def static(req, path):
     """ Serves static files from the static directory. """
     views_path = os.path.expanduser(PATHS['VIEWS'])

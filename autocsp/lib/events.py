@@ -2,9 +2,9 @@
     Currently used events: request, response, db_init. """
 import logging
 
-from libmproxy import controller
+import lib.utils
 
-from settings import LOCKED_MODE
+from libmproxy import controller
 
 
 logger = logging.getLogger(__name__)
@@ -23,13 +23,7 @@ class subscribe(object):
 
     def __init__(self, event, mode='*'):
         self.event = event
-        modes = ('*', 'locked', 'learning')
-        if mode not in modes:
-            raise ValueError('Event mode can only be one of the following: %s'
-                             % modes)
-        learn = True if mode in ('*', 'learning') else False
-        locked = True if mode in ('*', 'locked') else False
-        self.enabled = (LOCKED_MODE and locked) or (not LOCKED_MODE and learn)
+        self.enabled = lib.utils.resolve_mode(mode)
 
     def __call__(self, function):
         if (self.enabled and (not (self.event in events
