@@ -25,6 +25,21 @@ def serve_policy(req):
     return r
 
 
+def strip_query(uri, document_uri, db):
+    """ Checks if uri has a query part and strips it. Adds a warning to the
+        database to inform the user that this could pose a security risk. """
+    has_query = re.match('(^.+)\?(.*$)', uri)
+    if has_query:
+        uri = has_query.group(1)
+        if has_query.group(2):
+            warning = ('%s may be a dynamic script due to observed query '
+                       'parameters. This can subvert the CSP if inputs are not '
+                       'sanitized properly.') % uri
+            db.execute('INSERT OR IGNORE INTO warnings VALUES (NULL, ?, ?)',
+                       (document_uri, warning))
+    return uri
+
+
 @lib.webinterface.path('/_/policy')
 def refine_policy(req):
     """ Refines the policy obtained with the Report-Only header. """
@@ -46,6 +61,7 @@ def refine_policy(req):
                                 '? AND uri = ?', (data['uri'], directive, uri)):
                     ext_origin = re.match('(^https?://[^/]+)', uri,
                                           re.I).group(1)
+                    uri = strip_query(uri, data['uri'], db)
                     # set unspecific rule to not activated
                     db.execute('UPDATE policy SET activated = 0 WHERE '
                                'document_uri = ? AND directive = ? AND uri = ?',
@@ -95,16 +111,7 @@ def save_report(req):
                        ' directive=? AND uri LIKE ?',
                        (document_uri, directive, report['blocked-uri'] + '/%'))
             return
-    # check if URI has a query part
-    has_query = re.match('(^.+)\?(.*$)', blocked_uri)
-    if has_query:
-        blocked_uri = has_query.group(1)
-        if has_query.group(2):
-            warning = ('%s may be a dynamic script due to observed query '
-                       'parameters. This can subvert the CSP if inputs are not '
-                       'sanitized properly.') % blocked_uri
-            db.execute('INSERT OR IGNORE INTO warnings VALUES (NULL, ?, ?)',
-                       (document_uri, warning))
+    blocked_uri = strip_query(blocked_uri, document_uri, db)
     if blocked_uri.startswith('/%s/_' % WEBINTERFACE_URI):
         # internal data URIs to learn whitelist
         document_uri = 'learn'
