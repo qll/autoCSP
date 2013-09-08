@@ -8,7 +8,7 @@ html, body {
 }
 body {
     font-family: Verdana, Arial, sans;
-    color: 222;
+    color: #222;
 }
 img {
     border: 0;
@@ -115,7 +115,7 @@ footer {
     bottom: 0;
     left: 0;
     width: 100%;
-    background: #3f3029;
+    background: #222;
     color: #fff;
     font-size: 12px;
     text-align: right;
@@ -181,4 +181,17 @@ footer div {
 .datatable tbody tr.inactive td {
     color: #888;
     text-decoration: line-through;
+}
+h3.warning {
+    color: #ff3600;
+}
+div.warning {
+    padding-left: 6px;
+    border: 0;
+    border-left: 5px solid #ff3600;
+    margin-bottom: 5px;
+    font-style: italic;
+}
+div.warning:last-child {
+    margin: 0;
 }

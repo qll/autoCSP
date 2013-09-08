@@ -14,6 +14,8 @@ def create_tables(db):
     db.execute('CREATE TABLE policy (id INTEGER PRIMARY KEY AUTOINCREMENT, '
                'document_uri TEXT, directive TEXT, uri TEXT, request_id TEXT, '
                'activated INTEGER, UNIQUE (document_uri, directive, uri))')
+    db.execute('CREATE TABLE warnings (id INTEGER PRIMARY KEY AUTOINCREMENT, '
+               'document_uri TEXT, text TEXT, UNIQUE (document_uri, text))')
 
 
 @subscribe('response')

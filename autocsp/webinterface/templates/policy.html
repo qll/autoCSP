@@ -7,6 +7,16 @@
         <b>Content-Security-Policy:</b> {{ policy }}
     </div>
 </section>
+{% if warnings %}
+<section>
+    <h3 class="warning">Warnings</h3>
+    <div>
+        {% for warning in warnings %}
+            <div class="warning">{{ warning }}</div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
 <section>
     <table class="datatable">
         <thead>

@@ -95,6 +95,16 @@ def save_report(req):
                        ' directive=? AND uri LIKE ?',
                        (document_uri, directive, report['blocked-uri'] + '/%'))
             return
+    # check if URI has a query part
+    has_query = re.match('(^.+)\?(.*$)', blocked_uri)
+    if has_query:
+        blocked_uri = has_query.group(1)
+        if has_query.group(2):
+            warning = ('%s may be a dynamic script due to observed query '
+                       'parameters. This can subvert the CSP if inputs are not '
+                       'sanitized properly.') % blocked_uri
+            db.execute('INSERT OR IGNORE INTO warnings VALUES (NULL, ?, ?)',
+                       (document_uri, warning))
     if blocked_uri.startswith('/%s/_' % WEBINTERFACE_URI):
         # internal data URIs to learn whitelist
         document_uri = 'learn'

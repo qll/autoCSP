@@ -42,6 +42,8 @@ def display_policy(req):
         fullrules.append([id, directive, src, active])
     if len(rules) == 0:
         raise lib.webinterface.Http404Error()
+    warnings = [w[0] for w in db.select('SELECT text FROM warnings WHERE '
+                                        'document_uri = ?', uri)]
     return lib.webinterface.make_response('policy.html', document_uri=uri,
-                                          rules=fullrules,
+                                          rules=fullrules, warnings=warnings,
                                           policy=lib.csp.generate_policy(rules))
