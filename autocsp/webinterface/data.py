@@ -62,7 +62,7 @@ def refine_policy(req):
                     ext_origin = re.match('(^https?://[^/]+)', uri,
                                           re.I).group(1)
                     uri = strip_query(uri, data['uri'], db)
-                    # set unspecific rule to not activated
+                    # set unspecific rule to not activated ... there has to be one
                     db.execute('UPDATE policy SET activated = 0 WHERE '
                                'document_uri = ? AND directive = ? AND uri = ?',
                                (data['uri'], directive, ext_origin))
@@ -93,6 +93,7 @@ def save_report(req):
         return
     origin, document_uri = re.match('(^https?://[^/]+)(.*)$',
                                     report['document-uri'], re.I).groups()
+    activated = 1
     db = lib.utils.Globals()['db']
     if blocked_uri.startswith(origin):
         # cut same origin URIs so that they start with /
@@ -111,9 +112,15 @@ def save_report(req):
                        ' directive=? AND uri LIKE ?',
                        (document_uri, directive, report['blocked-uri'] + '/%'))
             return
+        # check for unlikely race condition: specific URIs exist -> activated=0
+        rules = db.count('policy WHERE activated=1 AND request_id=? AND '
+                         'document_uri = ? and directive = ? and uri LIKE ?',
+                         (request_id, document_uri, directive,
+                          blocked_uri + '/%'))
+        activated = 0 if rules else 1
     blocked_uri = strip_query(blocked_uri, document_uri, db)
     if blocked_uri.startswith('/%s/_' % WEBINTERFACE_URI):
-        # internal data URIs to learn whitelist
+        # backend URIs whitelisted for every ressource
         document_uri = 'learn'
-    db.execute('INSERT OR IGNORE INTO policy VALUES (NULL, ?, ?, ?, ?, 1)',
-               (document_uri, directive, blocked_uri, request_id))
+    db.execute('INSERT OR IGNORE INTO policy VALUES (NULL, ?, ?, ?, ?, ?)',
+               (document_uri, directive, blocked_uri, request_id, activated))
