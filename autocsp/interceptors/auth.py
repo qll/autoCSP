@@ -43,9 +43,10 @@ if mode:
     def add_auth(req):
         """ Adds HTTP Basic Authentication to the web application. """
         credentials = list()
-        if lib.webinterface.is_webinterface(req.get_path_components()):
-            credentials = (AUTH['webinterface'] if AUTH['webinterface']
-                                                else AUTH['learning'])
+        path = req.get_path_components()
+        if (lib.webinterface.is_webinterface(path) and AUTH['webinterface']
+            and not lib.webinterface.is_datasink(path)):
+            credentials = AUTH['webinterface']
         elif LOCKED_MODE and AUTH['locked']:
             credentials = AUTH['locked']
         elif not LOCKED_MODE and AUTH['learning']:

@@ -99,6 +99,11 @@ def is_webinterface(path):
     return True if len(path) and path[0] == WEBINTERFACE_URI else False
 
 
+def is_datasink(path):
+    """ Checks if the path is part of the proxy's data sinks. """
+    return is_webinterface(path) and len(path) > 1 and path[1] == '_'
+
+
 def render_template(template, **kwargs):
     """ Wrapper for env.get_template. """
     return env.get_template(template).render(**kwargs)
