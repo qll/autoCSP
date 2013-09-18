@@ -17,7 +17,9 @@
         <nav>
             <ul>
                 <li><a href="{{ base_url }}">Overview</a></li>
-                <li><a href="{{ base_url }}export">Export</a></li>
+                {% if mode != 'locked' %}
+                    <li><a href="{{ base_url }}export">Export</a></li>
+                {% endif %}
                 <li></li>
             </ul>
         </nav>
