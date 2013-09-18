@@ -47,3 +47,9 @@ def display_policy(req):
     return lib.webinterface.make_response('policy.html', document_uri=uri,
                                           rules=fullrules, warnings=warnings,
                                           policy=lib.csp.generate_policy(rules))
+
+
+@lib.webinterface.csp({'style-src': [style]})
+@lib.webinterface.path('/export')
+def export(req):
+    return lib.webinterface.make_response('export.html')
