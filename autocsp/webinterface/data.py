@@ -124,3 +124,8 @@ def save_report(req):
         document_uri = 'learn'
     db.execute('INSERT OR IGNORE INTO policy VALUES (NULL, ?, ?, ?, ?, ?)',
                (document_uri, directive, blocked_uri, request_id, activated))
+
+
+@lib.webinterface.path('/_/test', mode='*')
+def all_modes(req):
+    return 'test'

@@ -16,6 +16,8 @@ def create_tables(db):
                'activated INTEGER, UNIQUE (document_uri, directive, uri))')
     db.execute('CREATE TABLE warnings (id INTEGER PRIMARY KEY AUTOINCREMENT, '
                'document_uri TEXT, text TEXT, UNIQUE (document_uri, text))')
+    db.execute('CREATE TABLE violations (id INTEGER PRIMARY KEY AUTOINCREMENT,'
+               'report TEXT, UNIQUE report)')
 
 
 @subscribe('response')

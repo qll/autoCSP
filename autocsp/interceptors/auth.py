@@ -29,13 +29,6 @@ def check_credentials(credentials, headers):
                  else False)
 
 
-@subscribe('request')
-def prevent_unauthed_webinterface(req):
-    if lib.webinterface.is_webinterface(req.get_path_components()):
-        if LOCKED_MODE and not AUTH['webinterface']:
-            raise EventPropagationStop()
-
-
 if mode:
     logger.debug('HTTP Basic Auth is enabled.')
 
