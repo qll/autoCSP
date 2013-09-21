@@ -49,6 +49,11 @@ class Http401Error(HttpError):
         return r
 
 
+class Http403Error(HttpError):
+    def __init__(self, msg=''):
+        HttpError.__init__(self, 403, msg)
+
+
 class Http404Error(HttpError):
     def __init__(self, msg=''):
         HttpError.__init__(self, 404, msg)

@@ -11,7 +11,7 @@ import lib.http
 import lib.webinterface
 import webinterface.static
 
-from settings import PATHS, DEBUG, WEBINTERFACE_URI
+from settings import ORIGIN, PATHS, DEBUG, LOCKED_MODE, WEBINTERFACE_URI
 
 
 def strip_query(uri, document_uri, db):
@@ -119,29 +119,68 @@ def save_report(req):
                (document_uri, directive, blocked_uri, request_id, activated))
 
 
-def serve_scripts(scripts):
-    """ Combines one or more script files into one and embeds them in the
-        small autoCSP JavaScript framework. """
-    template = lib.webinterface.render_template('framework.js', debug=DEBUG,
-                                                                scripts=scripts)
-    r = lib.http.Response(content=template)
+def wrap_static(content, ext):
+    """ Wraps static content in a Response object w/ correct MIME-type. """
+    r = lib.http.Response(content=content)
     r.set_header('Content-Type', '%s; charset=UTF-8' %
-                                 webinterface.static.mime_types['.js'])
+                                 webinterface.static.mime_types[ext])
     return r
 
 
-@lib.webinterface.path('/_/inline.js', mode='locked')
-def serve_inlinejs(req):
+def serve_scripts(scripts):
+    """ Combines one or more script files into one and embeds them in the
+        small autoCSP JavaScript framework. """
+    debug = DEBUG and not LOCKED_MODE
+    views_path = os.path.expanduser(PATHS['VIEWS'])
+    with open(views_path + 'static/sha256.js', 'r') as f:
+        sha256js = f.read()
+    template = lib.webinterface.render_template('framework.js', debug=debug,
+                                                scripts=scripts,
+                                                sha256js=sha256js)
+    return wrap_static(template, '.js')
+
+
+def check_referer(headers, document_uri):
+    """ Checks if the Referer differs from the document_uri. The Referer Header
+        is just a bad way to do this so this is mereley an additional
+        hurdle. """
+    if 'Referer' not in headers:
+        return
+    referer = headers['Referer'][0]
+    origin = lib.utils.assemble_origin(ORIGIN)
+    if referer != origin + document_uri:
+        raise lib.webinterface.Http403Error()
+
+
+@lib.webinterface.path('/_/inline(/.*).js', mode='locked')
+def serve_inlinejs(req, document_uri):
     """ Serves the inline.js script handling inline styles in locked mode. """
-    return 'Not implemented, yet.'
+    check_referer(req.headers, document_uri)
+    inlinejs = lib.webinterface.render_template('inline.js')
+    return serve_scripts((inlinejs,))
+
+
+@lib.webinterface.path('/_/inline(/.*).css', mode='locked')
+def serve_inlinecss(req, document_uri):
+    """ Serves the inline.css stylesheet containing all inline styles in locked
+        mode. """
+    check_referer(req.headers, document_uri)
+    db = lib.utils.Globals()['db']
+    styles = [s[0] for s in
+              db.select('SELECT source FROM inline WHERE document_uri = ? AND '
+                        "type = 'css'", document_uri)]
+    attributes = [{'source': s, 'hash': h} for s, h in
+                  db.select('SELECT source, hash FROM inline WHERE '
+                            "document_uri = ? AND type = 'css-attr'",
+                            document_uri)]
+    template = lib.webinterface.render_template('inline.css', styles=styles,
+                                                attributes=attributes)
+    return wrap_static(template, '.css')
 
 
 @lib.webinterface.path('/_/learning.js')
 def serve_learningjs(req):
     """ Serves combination of policy.js and externalize.js. """
-    views_path = os.path.expanduser(PATHS['VIEWS'])
-    with open(views_path + 'static/sha256.js', 'r') as f:
-        sha256js = f.read()
     db = lib.utils.Globals()['db']
     document_uri = req.get_query()['document_uri'][0]
     known_hashes = ["'%s'" % h[0] for h in
@@ -152,7 +191,6 @@ def serve_learningjs(req):
     scripts = (lib.webinterface.render_template('policy.js',
                                                 report_uri=report_uri),
                lib.webinterface.render_template('externalize.js',
-                                                sha256js=sha256js,
                                                 externalizer_uri=ext_uri,
                                                 known_hashes=known_hashes))
     return serve_scripts(scripts)

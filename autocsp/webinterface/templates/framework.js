@@ -15,6 +15,9 @@ var request_id = '';
 var document_uri = location.pathname + location.search;
 
 
+{{ sha256js|safe }}
+
+
 // shortcut functions
 var $ = {
     empty: function(value) {

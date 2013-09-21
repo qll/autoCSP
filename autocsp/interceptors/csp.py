@@ -7,7 +7,7 @@ import lib.csp
 import lib.utils
 
 from lib.events import subscribe
-from settings import WEBINTERFACE_URI
+from settings import ORIGIN, WEBINTERFACE_URI
 
 
 @subscribe('db_init')
@@ -54,6 +54,23 @@ def add_report_header(resp, id):
     resp.headers['Content-Security-Policy-Report-Only'] = [policy]
 
 
+def inject_markup(resp, markup):
+    """ Try to inject markup in HTTP response. """
+    # inject after <head>
+    if '<head' in resp.content:
+        resp.content = re.sub('(<head[^>]*>)',
+                              lambda m: m.group(1) + markup,
+                              resp.content, 1)
+    # inject after <title>
+    elif '<title' in resp.content:
+        resp.content = re.sub('(<title[^>]*>)',
+                              lambda m: markup + m.group(1),
+                              resp.content, 1)
+    # if all fails just prepend to content
+    if markup not in resp.content:
+        resp.content = markup + resp.content
+
+
 def inject_script(resp, id):
     """ Injects a script into every served HTML page (policy generation). """
     if 'Content-Type' in resp.headers:
@@ -61,19 +78,7 @@ def inject_script(resp, id):
             doc_uri = urllib.quote(resp.request.path)
             inj = ('<script src="/%s/_/learning.js?document_uri=%s" '
                    'data-id="%s"></script>' % (WEBINTERFACE_URI, doc_uri, id))
-            # inject after <head>
-            if '<head' in resp.content:
-                resp.content = re.sub('(<head[^>]*>)',
-                                      lambda m: m.group(1) + inj,
-                                      resp.content, 1)
-            # inject after <title>
-            elif '<title' in resp.content:
-                resp.content = re.sub('(<title[^>]*>)',
-                                      lambda m: inj + m.group(1),
-                                      resp.content, 1)
-            # if all fails just prepend to content
-            if inj not in resp.content:
-                resp.content = inj + resp.content
+            inject_markup(resp, inj)
 
 
 @subscribe('response', mode='learning')
@@ -88,11 +93,28 @@ def add_csp_reports(resp):
 @subscribe('response', mode='locked')
 def inject_csp(resp):
     """ Injects a CSP to protect the webapp (policy enforcement). """
+    document_uri = resp.request.path
+    quoted_docuri = urllib.quote(resp.request.path)
     db = lib.utils.Globals()['db']
     rules = {}
     for directive, src in db.select('SELECT directive, uri FROM policy WHERE '
                                     'document_uri=? AND activated=1',
-                                    resp.request.path):
+                                    document_uri):
         rules.setdefault(directive, []).append(src)
+    css = db.count("inline WHERE document_uri=? AND type LIKE 'css%'",
+                   document_uri)
+    data_uri = '%s/%s/_/' % (lib.utils.assemble_origin(ORIGIN),
+                             WEBINTERFACE_URI)
+    if css:
+        css_uri = '%sinline%s.css' % (data_uri, quoted_docuri)
+        rules.setdefault('style-src', []).append(css_uri)
+        css_markup = '<link rel="stylesheet" href="%s" />' % css_uri
+        inject_markup(resp, css_markup)
+    js = False  # for later use and stuff
+    if css or js:
+        js_uri = '%sinline%s.js' % (data_uri, quoted_docuri)
+        rules.setdefault('script-src', []).append(js_uri)
+        js_markup = '<script src="%s"></script>' % js_uri
+        inject_markup(resp, js_markup)
     policy = "default-src 'none'; " + lib.csp.generate_policy(rules)
     resp.headers['Content-Security-Policy'] = [policy]

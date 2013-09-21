@@ -1,0 +1,4 @@
+{{ styles|join }}
+{% for attr in attributes %}
+.autoCSP{{ attr.hash }} { {{ attr.source }} }
+{% endfor %}

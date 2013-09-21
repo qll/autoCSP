@@ -1,10 +1,6 @@
 (function() {
 /** Inline script and style externalizer. */
 
-
-{{ sha256js|safe }}
-
-
 var knownHashes = [{{ known_hashes|join(',')|safe }}];
 var selectors = {
     'style': ['css', function(e) { return e.innerText; }],
@@ -18,7 +14,7 @@ window.addEventListener('load', function() {
         var type = value[0];
         var getter = value[1];
         $a.forEach(document.querySelectorAll(selector), function(e) {
-            var code = getter(e);
+            var code = getter(e).trim();
             if ($.empty(code)) {
                 return;
             }
