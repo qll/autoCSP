@@ -1,6 +1,7 @@
 import random
 import re
 import string
+import urllib
 
 import lib.csp
 import lib.utils
@@ -57,8 +58,9 @@ def inject_script(resp, id):
     """ Injects a script into every served HTML page (policy generation). """
     if 'Content-Type' in resp.headers:
         if re.match('\s*text/x?html*.', ''.join(resp.headers['Content-Type'])):
-            inj = ('<script src="/%s/_/learning.js" data-id="%s"></script>'
-                   % (WEBINTERFACE_URI, id))
+            doc_uri = urllib.quote(resp.request.path)
+            inj = ('<script src="/%s/_/learning.js?document_uri=%s" '
+                   'data-id="%s"></script>' % (WEBINTERFACE_URI, doc_uri, id))
             # inject after <head>
             if '<head' in resp.content:
                 resp.content = re.sub('(<head[^>]*>)',

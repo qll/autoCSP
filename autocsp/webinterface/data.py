@@ -142,13 +142,19 @@ def serve_learningjs(req):
     views_path = os.path.expanduser(PATHS['VIEWS'])
     with open(views_path + 'static/sha256.js', 'r') as f:
         sha256js = f.read()
+    db = lib.utils.Globals()['db']
+    document_uri = req.get_query()['document_uri'][0]
+    known_hashes = ["'%s'" % h[0] for h in
+                    db.select('SELECT hash FROM inline WHERE document_uri = ?',
+                              document_uri)]
     report_uri = '/%s/_/policy' % WEBINTERFACE_URI
     ext_uri = '/%s/_/externalize' % WEBINTERFACE_URI
     scripts = (lib.webinterface.render_template('policy.js',
                                                 report_uri=report_uri),
                lib.webinterface.render_template('externalize.js',
                                                 sha256js=sha256js,
-                                                externalizer_uri=ext_uri))
+                                                externalizer_uri=ext_uri,
+                                                known_hashes=known_hashes))
     return serve_scripts(scripts)
 
 
