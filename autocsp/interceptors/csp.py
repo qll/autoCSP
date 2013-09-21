@@ -16,8 +16,11 @@ def create_tables(db):
                'activated INTEGER, UNIQUE (document_uri, directive, uri))')
     db.execute('CREATE TABLE warnings (id INTEGER PRIMARY KEY AUTOINCREMENT, '
                'document_uri TEXT, text TEXT, UNIQUE (document_uri, text))')
-    db.execute('CREATE TABLE violations (id INTEGER PRIMARY KEY AUTOINCREMENT,'
-               'report TEXT, UNIQUE report)')
+    db.execute('CREATE TABLE violations (id INTEGER PRIMARY KEY AUTOINCREMENT, '
+               'report TEXT, UNIQUE (report))')
+    db.execute('CREATE TABLE inline (id INTEGER PRIMARY KEY AUTOINCREMENT, '
+               'document_uri TEXT, type TEXT, source TEXT, hash TEXT, '
+               'request_id TEXT, UNIQUE (document_uri, type, hash))')
 
 
 @subscribe('response')
@@ -54,7 +57,7 @@ def inject_script(resp, id):
     """ Injects a script into every served HTML page (policy generation). """
     if 'Content-Type' in resp.headers:
         if re.match('\s*text/x?html*.', ''.join(resp.headers['Content-Type'])):
-            inj = ('<script src="/%s/_/policy.js" data-id="%s"></script>'
+            inj = ('<script src="/%s/_/learning.js" data-id="%s"></script>'
                    % (WEBINTERFACE_URI, id))
             # inject after <head>
             if '<head' in resp.content:

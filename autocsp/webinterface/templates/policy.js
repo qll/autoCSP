@@ -1,136 +1,5 @@
-
 (function() {
-/** Policy generation script. Will retrieve CSP directive URIs from the DOM. */
-'use strict';
-
-
-var request_id = '';
-(function() {
-    /** Delete this <script> element from DOM (first script on page). */
-    var this_element = document.getElementsByTagName('script')[0];
-    request_id = this_element.dataset.id;
-    this_element.parentNode.removeChild(this_element);
-})();
-
-
-// shortcut functions
-var $ = {
-    empty: function(value) {
-        /** Sane emptiness check. $.empty([]) == true, $.empty({}) == true */
-        if (value === null || value === undefined ||
-            (value.constructor !== Boolean &&
-             ((value.constructor === Array && !value.length) ||
-              (value.constructor === Object &&
-               value.toString() == '[object Object]' &&
-               !Object.keys(value).length) || !value))) {
-            return true;
-        }
-        return false;
-    },
-    log: function(msg, type) {
-        /** Log function which logs only when DEBUG is enabled. */
-        type = type || 'log';
-        if ({{ debug|int }}) {
-            console[type](msg);
-        }
-    },
-    toAbsoluteUri: function(uri) {
-        var a = document.createElement('a');
-        a.href = uri;
-        return a.href;
-    },
-};
-
-
-// Array functions
-var $a = {
-    add: function(array, value) {
-        /** If value, adds to array, if array adds all values to array. */
-        if (value.constructor === Array) {
-            for (var i = 0; i < value.length; i++) {
-                array.push(value[i]);
-            }
-        } else {
-            array.push(value);
-        }
-    },
-    forEach: function(array, callback) {
-        /** Calls forEach on arrays and array-like objects. */
-        Array.prototype.forEach.call(array, callback);
-    },
-    in: function(array, value) {
-        /** Checks if value can be found in array. */
-        return Array.prototype.indexOf.call(array, value) > -1;
-    },
-};
-
-
-// Object functions
-var $o = {
-    forEach: function(object, callback) {
-        for (var key in object) {
-            if ($o.in(object, key)) {
-                callback(key, object[key]);
-            }
-        }
-    },
-    in: function(object, key) {
-        /** Returns if an key exists in the object. */
-        return Object.prototype.hasOwnProperty.call(object, key);
-    },
-    setDefault: function(object, key, default_val) {
-        /** Returns a object key and sets it if it does not exist, yet. */
-        default_val = default_val || null;
-        if (!$o.in(object, key)) {
-            object[key] = default_val;
-        }
-        return object[key];
-    },
-};
-
-
-// String functions
-var $s = {
-    startsWith: function(str, startstr) {
-        return str.slice(0, startstr.length) === startstr;
-    },
-};
-
-
-// Network functions
-var $n = {
-    get: function(url, callback) {
-        (new $n.Request(url, callback)).get();
-    },
-    post: function(url, data, callback) {
-        /** POSTS to the URL and url-encodes the data object. */
-        var components = [];
-        $o.forEach(data, function(key, value) {
-            components.push(window.encodeURIComponent(key) + '=' +
-                            window.encodeURIComponent(value));
-        });
-        (new $n.Request(url, callback)).post(components.join('&'));
-    }, 
-};
-$n.Request = function(url, callback) {
-    callback = callback || function () {};
-    this.url = url;
-    this.xhr = new XMLHttpRequest();
-    this.xhr.addEventListener('readystatechange', function() {
-        if (this.readyState === 4) {
-            callback(this.responseText);
-        }
-    });
-};
-$n.Request.prototype.get = function() {
-    this.xhr.open('GET', this.url);
-    this.xhr.send();
-};
-$n.Request.prototype.post = function(data) {
-    data = data || '';
-    this.xhr.open('POST', this.url);
-    this.xhr.send(data);
-};
+/** Policy generation script of autoCSP. */
 
 
 // will contain a Map of Node types we want to visit
@@ -242,15 +111,7 @@ var visit = null;
 })();
 
 
-
-$.log('autoCSP is in debug mode.', 'warn');
-$.log('Request ID is ' + request_id + '.');
-
-
 window.addEventListener('load', function() {
-    // current path
-    var uri = location.pathname + location.search;
-
     var inferRules = function(nodes) {
         /** Infers CSP rules from given nodes with the visit list. */
         var rules = {};
@@ -283,18 +144,19 @@ window.addEventListener('load', function() {
             return;
         }
         var rules = JSON.stringify(rules.valueOf());
-        $.log('Sending data to backend for ' + uri + ':\n' + rules);
-        $n.post('{{ report_uri }}', {'id': request_id, 'uri': uri,
+        $.log('Policy.js: Sending data to backend for ' + document_uri + ':\n' +
+              rules);
+        $n.post('{{ report_uri }}', {'id': request_id, 'uri': document_uri,
                                      'sources': rules});
     };
 
-    $.log('Start processing all nodes to infer rules...');
+    $.log('Policy.js: Start processing all nodes to infer rules...');
     var startTime = Date.now();
 
     processNodes(document.getElementsByTagName('*'));
 
     var delta = Date.now() - startTime;
-    $.log('Finished processing all nodes in ' + delta + ' ms.');
+    $.log('Policy.js: Finished processing all nodes in ' + delta + ' ms.');
 
     // register an observer for future changes (tree mod and attributes)
     var observer = new MutationObserver(function(mutations) {

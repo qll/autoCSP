@@ -1,5 +1,7 @@
 """ Data-retrieving views. """
+import hashlib
 import json
+import os
 import re
 import urllib
 
@@ -9,20 +11,7 @@ import lib.http
 import lib.webinterface
 import webinterface.static
 
-from settings import DEBUG, WEBINTERFACE_URI
-
-
-@lib.webinterface.path('/_/policy.js')
-def serve_policy(req):
-    """ Serves the policy.js script. """
-    report_uri = '/%s/_/policy' % WEBINTERFACE_URI
-    template = lib.webinterface.render_template('policy.js',
-                                                report_uri=report_uri,
-                                                debug=DEBUG)
-    r = lib.http.Response(content=template)
-    r.set_header('Content-Type', '%s; charset=UTF-8' %
-                                 webinterface.static.mime_types['.js'])
-    return r
+from settings import PATHS, DEBUG, WEBINTERFACE_URI
 
 
 def strip_query(uri, document_uri, db):
@@ -40,16 +29,20 @@ def strip_query(uri, document_uri, db):
     return uri
 
 
-@lib.webinterface.path('/_/policy')
-def refine_policy(req):
-    """ Refines the policy obtained with the Report-Only header. """
-    if '&' not in req.content:
-        return
+def parse_query(query):
+    """ Parses URL-encoded parameters. """
     data = {}
-    for component in req.content.split('&'):
+    for component in query.split('&'):
         if '=' in component:
             p, v = component.split('=', 1)
             data[urllib.unquote(p)] = urllib.unquote(v)
+    return data
+
+
+@lib.webinterface.path('/_/policy')
+def refine_policy(req):
+    """ Refines the policy obtained with the Report-Only header. """
+    data = parse_query(req.content)
     if 'sources' not in data or 'uri' not in data or 'id' not in data:
         raise lib.webinterface.Http400Error('Incomplete policy report.')
     data['sources'] = json.loads(data['sources'])
@@ -126,6 +119,51 @@ def save_report(req):
                (document_uri, directive, blocked_uri, request_id, activated))
 
 
-@lib.webinterface.path('/_/test', mode='*')
-def all_modes(req):
-    return 'test'
+def serve_scripts(scripts):
+    """ Combines one or more script files into one and embeds them in the
+        small autoCSP JavaScript framework. """
+    template = lib.webinterface.render_template('framework.js', debug=DEBUG,
+                                                                scripts=scripts)
+    r = lib.http.Response(content=template)
+    r.set_header('Content-Type', '%s; charset=UTF-8' %
+                                 webinterface.static.mime_types['.js'])
+    return r
+
+
+@lib.webinterface.path('/_/inline.js', mode='locked')
+def serve_inlinejs(req):
+    """ Serves the inline.js script handling inline styles in locked mode. """
+    return 'Not implemented, yet.'
+
+
+@lib.webinterface.path('/_/learning.js')
+def serve_learningjs(req):
+    """ Serves combination of policy.js and externalize.js. """
+    views_path = os.path.expanduser(PATHS['VIEWS'])
+    with open(views_path + 'static/sha256.js', 'r') as f:
+        sha256js = f.read()
+    report_uri = '/%s/_/policy' % WEBINTERFACE_URI
+    ext_uri = '/%s/_/externalize' % WEBINTERFACE_URI
+    scripts = (lib.webinterface.render_template('policy.js',
+                                                report_uri=report_uri),
+               lib.webinterface.render_template('externalize.js',
+                                                sha256js=sha256js,
+                                                externalizer_uri=ext_uri))
+    return serve_scripts(scripts)
+
+
+@lib.webinterface.path('/_/externalize')
+def save_inline(req):
+    """ Saves inline scripts and styles to the database for externalization. """
+    data = parse_query(req.content)
+    if 'inline' not in data or 'uri' not in data or 'id' not in data:
+        raise lib.webinterface.Http400Error('Incomplete externalize request.')
+    db = lib.utils.Globals()['db']
+    inline = json.loads(data['inline'])
+    for type, sources in inline.items():
+        if type not in ('css', 'css-attr'):
+            continue
+        for source in sources:
+            hash = hashlib.sha256(source).hexdigest()
+            db.execute('INSERT INTO inline VALUES (NULL, ?, ?, ?, ?, ?)',
+                       (data['uri'], type, source, hash, data['id']))
