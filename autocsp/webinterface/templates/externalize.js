@@ -11,9 +11,20 @@ var visit = null;
             return e.getAttribute('style').trim();
         }
     };
+    var getEventHandlers = function(e) {
+        var eventHandlers = [];
+        for (var i = 0; i < e.attributes.length; i++) {
+            var attr = e.attributes.item(i);
+            var match = attr.nodeName.match(/on([a-z]+)/i);
+            if (match && !$.empty(attr.nodeValue.trim())) {
+                eventHandlers.push(match[1] + ',' + attr.nodeValue.trim());
+            }
+        }
+        return eventHandlers;
+    };
 
     visit = {
-        '*': {'css-attr': getStyleAttribute},
+        '*': {'css-attr': getStyleAttribute, 'js-event': getEventHandlers},
         'STYLE': {'css': function(e) { return e.innerText.trim(); }},
     };
 })();
@@ -34,11 +45,11 @@ window.addEventListener('load', function() {
         $.sendToBackend(inline, '{{ externalizer_uri }}');
     };
 
-    $.log('Externalize.js: Start processing all nodes to infer rules...');
+    $.log('Externalize.js: Start externalizing all inline code.');
     var startTime = Date.now();
     externalize(document.getElementsByTagName('*'));
     var delta = Date.now() - startTime;
-    $.log('Externalize.js: Finished processing all nodes in ' + delta + ' ms.');
+    $.log('Externalize.js: Finished externalizing code in ' + delta + ' ms.');
 
     // register an observer for future changes (tree mod and attributes)
     var observer = new MutationObserver(function(mutations) {

@@ -156,7 +156,11 @@ def check_referer(headers, document_uri):
 def serve_inlinejs(req, document_uri):
     """ Serves the inline.js script handling inline styles in locked mode. """
     check_referer(req.headers, document_uri)
-    inlinejs = lib.webinterface.render_template('inline.js')
+    db = lib.utils.Globals()['db']
+    events = [{'source': s.split(',', 1)[1], 'hash': h} for s, h in
+              db.select('SELECT source, hash FROM inline WHERE document_uri = '
+                        "? AND type='js-event'", document_uri)]
+    inlinejs = lib.webinterface.render_template('inline.js', events=events)
     return serve_scripts((inlinejs,))
 
 
@@ -205,7 +209,7 @@ def save_inline(req):
     db = lib.utils.Globals()['db']
     inline = json.loads(data['data'])
     for type, sources in inline.items():
-        if type not in ('css', 'css-attr'):
+        if type not in ('css', 'css-attr', 'js', 'js-event'):
             continue
         for source in sources:
             hash = hashlib.sha256(source).hexdigest()

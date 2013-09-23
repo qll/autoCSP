@@ -63,7 +63,11 @@ var $ = {
         var node = null;
         var store_in_data = function(directive, getter) {
             var value = getter(node);
-            if (!$.empty(value) && checkfunc(value)) {
+            var isArray = value && value.constructor === Array;
+            if (isArray) {
+                value = value.filter(checkfunc);
+            }
+            if (!$.empty(value) && (isArray || checkfunc(value))) {
                 var list = $o.setDefault(data, directive, []);
                 if (!$a.in(list, value)) {
                     $a.add(list, value);
