@@ -15,7 +15,7 @@ var visit = null;
         var eventHandlers = [];
         for (var i = 0; i < e.attributes.length; i++) {
             var attr = e.attributes.item(i);
-            var match = attr.nodeName.match(/on([a-z]+)/i);
+            var match = attr.nodeName.match(/^on([a-z]+$)/i);
             if (match && !$.empty(attr.nodeValue.trim())) {
                 eventHandlers.push(match[1] + ',' + attr.nodeValue.trim());
             }
@@ -63,7 +63,7 @@ window.addEventListener('load', function() {
     var setAttribute = Element.prototype.setAttribute;
     var setAttributeReplacement = function(attr, value) {
         setAttribute.call(this, attr, value);
-        if (attr === 'style') {
+        if (attr === 'style' || attr.match(/^on[a-z]+$/i)) {
             externalize([this]);
         }
     };

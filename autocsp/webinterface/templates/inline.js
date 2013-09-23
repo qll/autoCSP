@@ -24,6 +24,9 @@ var eventHandlers = null;
 
 var addStyleAttrClass = function(node) {
     /** Assign class to all Elements with inline style attributes. */
+    if (!node.hasAttribute('style')) {
+        return;
+    }
     var hash = CryptoJS.SHA256(node.getAttribute('style').trim()).toString();
     node.classList.add(PREFIX + hash);
 }
@@ -40,7 +43,6 @@ var addEventHandler = function(e) {
             if ($o.in(eventHandlers, hash)) {
                 e.removeAttribute(match[0]);
                 e.classList.add(JSPREFIX + hash);
-                window.a=e;
                 e[match[0]] = eventHandlers[hash];
             }
         }
@@ -49,21 +51,22 @@ var addEventHandler = function(e) {
 
 
 window.addEventListener('DOMContentLoaded', function() {
-    $a.forEach(document.querySelectorAll('*[style]'), addStyleAttrClass);
-
     $a.forEach(document.getElementsByTagName('*'), function(e) {
         if (!e.tagName) {
             return;
         }
+        addStyleAttrClass(e);
         addEventHandler(e);
     });
 
     var observer = new MutationObserver(function(mutations) {
         $a.forEach(mutations, function(mutation) {
             $a.forEach(mutation.addedNodes, function(node) {
-                if (node.tagName && node.hasAttribute('style')) {
-                    addStyleAttrClass(node);
+                if (!node.tagName) {
+                    return;
                 }
+                addStyleAttrClass(node);
+                addEventHandler(node);
             });
         });
     });
@@ -75,6 +78,8 @@ window.addEventListener('DOMContentLoaded', function() {
         setAttribute.call(this, attr, value);
         if (attr === 'style') {
             addStyleAttrClass(this);
+        } else if (attr.match(/^on[a-z]+$/i)) {
+            addEventHandler(this);
         }
     };
     Object.defineProperty(Element.prototype, 'setAttribute',
