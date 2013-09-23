@@ -1,36 +1,56 @@
 (function() {
 /** Inline script and style externalizer. */
 
-var knownHashes = [{{ known_hashes|join(',')|safe }}];
-var selectors = {
-    'style': ['css', function(e) { return e.innerText; }],
-    '*[style]': ['css-attr', function(e) { return e.getAttribute('style'); }]
-};
+
+var visit = null;
+
+
+(function() {
+    var getStyleAttribute = function(e) {
+        if (e.hasAttribute('style')) {
+            return e.getAttribute('style').trim();
+        }
+    };
+
+    visit = {
+        '*': {'css-attr': getStyleAttribute},
+        'STYLE': {'css': function(e) { return e.innerText.trim(); }},
+    };
+})();
 
 
 window.addEventListener('load', function() {
-    var inlineCode = {};
-    $o.forEach(selectors, function(selector, value) {
-        var type = value[0];
-        var getter = value[1];
-        $a.forEach(document.querySelectorAll(selector), function(e) {
-            var code = getter(e).trim();
-            if ($.empty(code)) {
-                return;
-            }
-            var hash = CryptoJS.SHA256(code).toString();
-            if (!$a.in(knownHashes, hash)) {
-                $o.setDefault(inlineCode, type, []).push(code)
-            }
+    var knownHashes = [{{ known_hashes|join(',')|safe }}];
+    var check = function(value) {
+        /** Don't resend known hashes. */
+        var hash = CryptoJS.SHA256(value).toString();
+        if ($a.in(knownHashes, hash)) {
+            return false;
+        }
+        return true;
+    };
+
+    $.log('Externalize.js: Start processing all nodes to infer rules...');
+    var startTime = Date.now();
+
+    var inline = $.processNodes(document.getElementsByTagName('*'), visit,
+                                check);
+    $.sendToBackend(inline, '{{ externalizer_uri }}');
+
+    var delta = Date.now() - startTime;
+    $.log('Externalize.js: Finished processing all nodes in ' + delta + ' ms.');
+
+    // register an observer for future changes (tree mod and attributes)
+    var observer = new MutationObserver(function(mutations) {
+        $a.forEach(mutations, function(mutation) {
+            var nodes = (mutation.type === 'childList') ? mutation.addedNodes :
+                                                          [mutation.target];
+            var inline = $.processNodes(nodes, visit);
+            $.sendToBackend(inline, '{{ externalizer_uri }}');
         });
     });
-    if (!$.empty(inlineCode)) {
-        var inline = JSON.stringify(inlineCode);
-        $.log('Externalize.js: Sending data to backend for ' + document_uri +
-              ':\n' + inline)
-        $n.post('{{ externalizer_uri }}', {'id': request_id, 'inline': inline,
-                                           'uri': document_uri});
-    }
+    observer.observe(document.body.parentNode,
+                     {subtree: true, childList: true});
 });
 
 

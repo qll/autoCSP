@@ -44,6 +44,43 @@ var $ = {
         a.href = uri;
         return a.href;
     },
+    sendToBackend: function(data, report_uri) {
+        /** POSTs data to backend. */
+        if ($.empty(data)) {
+            // don't POST empty JSON response
+            return;
+        }
+        var data = JSON.stringify(data);
+        $.log('Sending from ' + document_uri + ' to ' + report_uri + ':\n' +
+              data);
+        $n.post(report_uri, {'id': request_id, 'uri': document_uri,
+                             'data': data});
+    },
+    processNodes: function(nodes, visit, checkfunc) {
+        /** Visits all nodes and builds a list of visit return values. */
+        var data = {};
+        var checkfunc = checkfunc || function() { return true; };
+        var node = null;
+        var store_in_data = function(directive, getter) {
+            var value = getter(node);
+            if (!$.empty(value) && checkfunc(value)) {
+                var list = $o.setDefault(data, directive, []);
+                if (!$a.in(list, value)) {
+                    $a.add(list, value);
+                }
+            }
+        };
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].tagName) {
+                node = nodes[i];
+                $o.forEach(visit['*'], store_in_data);
+                if ($o.in(visit, node.tagName)) {
+                    $o.forEach(visit[node.tagName], store_in_data);
+                }
+            }
+        }
+        return data;
+    },
     matchesSelector: function(node, selector) {
         /** Does the Node match the CSS selector? */
         var proto = Element.prototype;

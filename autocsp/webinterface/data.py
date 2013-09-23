@@ -43,11 +43,11 @@ def parse_query(query):
 def refine_policy(req):
     """ Refines the policy obtained with the Report-Only header. """
     data = parse_query(req.content)
-    if 'sources' not in data or 'uri' not in data or 'id' not in data:
+    if 'data' not in data or 'uri' not in data or 'id' not in data:
         raise lib.webinterface.Http400Error('Incomplete policy report.')
-    data['sources'] = json.loads(data['sources'])
+    data['data'] = json.loads(data['data'])
     db = lib.utils.Globals()['db']
-    for directive, uris in data['sources'].items():
+    for directive, uris in data['data'].items():
         if directive in lib.csp.directives:
             for uri in uris:
                 if not db.count('policy WHERE document_uri = ? AND directive = '
@@ -200,10 +200,10 @@ def serve_learningjs(req):
 def save_inline(req):
     """ Saves inline scripts and styles to the database for externalization. """
     data = parse_query(req.content)
-    if 'inline' not in data or 'uri' not in data or 'id' not in data:
+    if 'data' not in data or 'uri' not in data or 'id' not in data:
         raise lib.webinterface.Http400Error('Incomplete externalize request.')
     db = lib.utils.Globals()['db']
-    inline = json.loads(data['inline'])
+    inline = json.loads(data['data'])
     for type, sources in inline.items():
         if type not in ('css', 'css-attr'):
             continue

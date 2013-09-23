@@ -112,48 +112,11 @@ var visit = null;
 
 
 window.addEventListener('load', function() {
-    var inferRules = function(nodes) {
-        /** Infers CSP rules from given nodes with the visit list. */
-        var rules = {};
-        var node = null;
-        var store_in_sources = function(directive, func) {
-            var uri = func(node);
-            if (!$.empty(uri)) {
-                var list = $o.setDefault(rules, directive, []);
-                if (!$a.in(list, uri)) {
-                    $a.add(list, uri);
-                }
-            }
-        };
-        for (var i = 0; i < nodes.length; i++) {
-            if (nodes[i].tagName) {
-                node = nodes[i];
-                $o.forEach(visit['*'], store_in_sources);
-                if ($o.in(visit, node.tagName)) {
-                    $o.forEach(visit[node.tagName], store_in_sources);
-                }
-            }
-        }
-        return rules;
-    };
-    var processNodes = function(nodes) {
-        /** Retrieves policy rules from nodes and POSTs to backend. */
-        var rules = inferRules(nodes);
-        if ($.empty(rules)) {
-            // don't POST empty JSON response
-            return;
-        }
-        var rules = JSON.stringify(rules.valueOf());
-        $.log('Policy.js: Sending data to backend for ' + document_uri + ':\n' +
-              rules);
-        $n.post('{{ report_uri }}', {'id': request_id, 'uri': document_uri,
-                                     'sources': rules});
-    };
-
     $.log('Policy.js: Start processing all nodes to infer rules...');
     var startTime = Date.now();
 
-    processNodes(document.getElementsByTagName('*'));
+    var rules = $.processNodes(document.getElementsByTagName('*'), visit);
+    $.sendToBackend(rules, '{{ report_uri }}');
 
     var delta = Date.now() - startTime;
     $.log('Policy.js: Finished processing all nodes in ' + delta + ' ms.');
@@ -163,7 +126,8 @@ window.addEventListener('load', function() {
         $a.forEach(mutations, function(mutation) {
             var nodes = (mutation.type === 'childList') ? mutation.addedNodes :
                                                           [mutation.target];
-            processNodes(nodes);
+            var rules = $.processNodes(nodes, visit);
+            $.sendToBackend(rules, '{{ report_uri }}');
         });
     });
     observer.observe(document.body.parentNode,
