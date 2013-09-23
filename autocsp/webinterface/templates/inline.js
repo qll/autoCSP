@@ -19,6 +19,16 @@ window.addEventListener('DOMContentLoaded', function() {
     });
     observer.observe(document.body.parentNode,
                      {subtree: true, childList: true});
+
+    var setAttribute = Element.prototype.setAttribute;
+    var setAttributeReplacement = function(attr, value) {
+        setAttribute.call(this, attr, value);
+        if (attr === 'style') {
+            addStyleAttrClass(this);
+        }
+    };
+    Object.defineProperty(Element.prototype, 'setAttribute',
+                          {value: setAttributeReplacement});
 });
 
 })();

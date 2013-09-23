@@ -29,28 +29,35 @@ window.addEventListener('load', function() {
         }
         return true;
     };
+    var externalize = function(nodes) {
+        var inline = $.processNodes(nodes, visit, check);
+        $.sendToBackend(inline, '{{ externalizer_uri }}');
+    };
 
     $.log('Externalize.js: Start processing all nodes to infer rules...');
     var startTime = Date.now();
-
-    var inline = $.processNodes(document.getElementsByTagName('*'), visit,
-                                check);
-    $.sendToBackend(inline, '{{ externalizer_uri }}');
-
+    externalize(document.getElementsByTagName('*'));
     var delta = Date.now() - startTime;
     $.log('Externalize.js: Finished processing all nodes in ' + delta + ' ms.');
 
     // register an observer for future changes (tree mod and attributes)
     var observer = new MutationObserver(function(mutations) {
         $a.forEach(mutations, function(mutation) {
-            var nodes = (mutation.type === 'childList') ? mutation.addedNodes :
-                                                          [mutation.target];
-            var inline = $.processNodes(nodes, visit);
-            $.sendToBackend(inline, '{{ externalizer_uri }}');
+            externalize(mutation.addedNodes);
         });
     });
     observer.observe(document.body.parentNode,
                      {subtree: true, childList: true});
+
+    var setAttribute = Element.prototype.setAttribute;
+    var setAttributeReplacement = function(attr, value) {
+        setAttribute.call(this, attr, value);
+        if (attr === 'style') {
+            externalize([this]);
+        }
+    };
+    Object.defineProperty(Element.prototype, 'setAttribute',
+                          {value: setAttributeReplacement});
 });
 
 

@@ -209,5 +209,5 @@ def save_inline(req):
             continue
         for source in sources:
             hash = hashlib.sha256(source).hexdigest()
-            db.execute('INSERT INTO inline VALUES (NULL, ?, ?, ?, ?, ?)',
-                       (data['uri'], type, source, hash, data['id']))
+            db.execute('INSERT OR IGNORE INTO inline VALUES (NULL, ?, ?, ?, ?, '
+                       '?)', (data['uri'], type, source, hash, data['id']))
