@@ -110,7 +110,8 @@ def inject_csp(resp):
         rules.setdefault('style-src', []).append(css_uri)
         css_markup = '<link rel="stylesheet" href="%s" />' % css_uri
         inject_markup(resp, css_markup)
-    js = False  # for later use and stuff
+    js = db.count("inline WHERE document_uri=? AND type LIKE 'js%'",
+                  document_uri)
     if css or js:
         js_uri = '%sinline%s.js' % (data_uri, quoted_docuri)
         rules.setdefault('script-src', []).append(js_uri)

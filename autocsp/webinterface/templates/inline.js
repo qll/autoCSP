@@ -2,8 +2,8 @@
 
 
 var PREFIX = 'autoCSP';
-var JSPREFIX = 'autoCSPjs';
 var eventHandlers = null;
+var inlineScripts = null;
 
 
 (function() {
@@ -14,11 +14,13 @@ var eventHandlers = null;
     var $o = window.$o;
     var $s = window.$s;
 
-    eventHandlers = {
-    {% for e in events %}
+    eventHandlers = { {% for e in events %}
         '{{ e.hash }}': function() { {{ e.source }} },
-    {% endfor %}
-    };
+    {% endfor %} };
+
+    inlineScripts = { {% for s in sources %}
+        '{{ s.hash }}': function() { {{ s.source }} },
+    {% endfor %} };
 })();
 
 
@@ -42,12 +44,29 @@ var addEventHandler = function(e) {
             var hash = CryptoJS.SHA256(toBeHashed).toString();
             if ($o.in(eventHandlers, hash)) {
                 e.removeAttribute(match[0]);
-                e.classList.add(JSPREFIX + hash);
                 e[match[0]] = eventHandlers[hash];
+                if ($a.in(['load', 'error'], match[1])) {
+                    // re-trigger events which could have already been fired
+                    var prop = (e.tagName == 'LINK') ? 'href' : 'src';
+                    var old = e[prop];
+                    e[prop] = '';
+                    e[prop] = old;
+                }
             }
         }
     }
 }
+
+
+var executeInlineScript = function(e) {
+    if (e.tagName !== 'SCRIPT') {
+        return;
+    }
+    var hash = CryptoJS.SHA256(e.innerText.trim()).toString();
+    if ($o.in(inlineScripts, hash)) {
+        inlineScripts[hash]();
+    }
+};
 
 
 window.addEventListener('DOMContentLoaded', function() {
@@ -57,6 +76,7 @@ window.addEventListener('DOMContentLoaded', function() {
         }
         addStyleAttrClass(e);
         addEventHandler(e);
+        executeInlineScript(e);
     });
 
     var observer = new MutationObserver(function(mutations) {
@@ -67,6 +87,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 }
                 addStyleAttrClass(node);
                 addEventHandler(node);
+                executeInlineScript(e);
             });
         });
     });

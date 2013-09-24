@@ -22,9 +22,15 @@ var visit = null;
         }
         return eventHandlers;
     };
+    var getInlineScript = function(e) {
+        if (!e.hasAttribute('src')) {
+            return e.innerText.trim();
+        }
+    }
 
     visit = {
         '*': {'css-attr': getStyleAttribute, 'js-event': getEventHandlers},
+        'SCRIPT': {'js': getInlineScript},
         'STYLE': {'css': function(e) { return e.innerText.trim(); }},
     };
 })();
