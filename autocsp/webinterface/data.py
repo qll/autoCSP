@@ -20,7 +20,7 @@ def strip_query(uri, document_uri, db):
     has_query = re.match('(^.+)\?(.*$)', uri)
     if has_query:
         uri = has_query.group(1)
-        if has_query.group(2):
+        if has_query.group(2) and not document_uri == 'learn':
             warning = ('%s may be a dynamic script due to observed query '
                        'parameters. This can subvert the CSP if inputs are not '
                        'sanitized properly.') % uri
@@ -111,10 +111,10 @@ def save_report(req):
                          (request_id, document_uri, directive,
                           blocked_uri + '/%'))
         activated = 0 if rules else 1
-    blocked_uri = strip_query(blocked_uri, document_uri, db)
     if blocked_uri.startswith('/%s/_' % WEBINTERFACE_URI):
         # backend URIs whitelisted for every ressource
         document_uri = 'learn'
+    blocked_uri = strip_query(blocked_uri, document_uri, db)
     db.execute('INSERT OR IGNORE INTO policy VALUES (NULL, ?, ?, ?, ?, ?)',
                (document_uri, directive, blocked_uri, request_id, activated))
 
