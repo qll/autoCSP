@@ -1,5 +1,7 @@
+import hashlib
 import jinja2
 import logging
+import os
 import re
 
 import lib.csp
@@ -122,6 +124,11 @@ def make_response(template, **kwargs):
 def wrap_response(val):
     """ Returns a lib.http.Response in any case. """
     return val if isinstance(val, Response) else Response(content=str(val))
+
+
+def generate_token():
+    """ Generates an unpredictable token or nonce. """
+    return hashlib.sha256(os.urandom(32)).hexdigest()
 
 
 def call_view(req, path):

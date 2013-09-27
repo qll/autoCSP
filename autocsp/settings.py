@@ -32,6 +32,10 @@ ORIGIN = ('http', 'localhost', 8080)
 DEBUG = True
 
 
+# Externalize inline scripts?
+REWRITE_INLINE = True
+
+
 # HTTP Basic Authentication credentials. None or ('user', 'pass').
 AUTH = {
     'learning': None,  # Auth for the web app in learning mode.

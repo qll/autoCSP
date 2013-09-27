@@ -7,7 +7,7 @@ import lib.csp
 import lib.utils
 
 from lib.events import subscribe
-from settings import ORIGIN, WEBINTERFACE_URI
+from settings import ORIGIN, REWRITE_INLINE, WEBINTERFACE_URI
 
 
 @subscribe('db_init')
@@ -101,21 +101,22 @@ def inject_csp(resp):
                                     'document_uri=? AND activated=1',
                                     document_uri):
         rules.setdefault(directive, []).append(src)
-    css = db.count("inline WHERE document_uri=? AND type LIKE 'css%'",
-                   document_uri)
-    data_uri = '%s/%s/_/' % (lib.utils.assemble_origin(ORIGIN),
-                             WEBINTERFACE_URI)
-    if css:
-        css_uri = '%sinline%s.css' % (data_uri, quoted_docuri)
-        rules.setdefault('style-src', []).append(css_uri)
-        css_markup = '<link rel="stylesheet" href="%s" />' % css_uri
-        inject_markup(resp, css_markup)
-    js = db.count("inline WHERE document_uri=? AND type LIKE 'js%'",
-                  document_uri)
-    if css or js:
-        js_uri = '%sinline%s.js' % (data_uri, quoted_docuri)
-        rules.setdefault('script-src', []).append(js_uri)
-        js_markup = '<script src="%s"></script>' % js_uri
-        inject_markup(resp, js_markup)
+    if REWRITE_INLINE:
+        css = db.count("inline WHERE document_uri=? AND type LIKE 'css%'",
+                       document_uri)
+        data_uri = '%s/%s/_/' % (lib.utils.assemble_origin(ORIGIN),
+                                 WEBINTERFACE_URI)
+        if css:
+            css_uri = '%sinline%s.css' % (data_uri, quoted_docuri)
+            rules.setdefault('style-src', []).append(css_uri)
+            css_markup = '<link rel="stylesheet" href="%s" />' % css_uri
+            inject_markup(resp, css_markup)
+        js = db.count("inline WHERE document_uri=? AND type LIKE 'js%'",
+                      document_uri)
+        if css or js:
+            js_uri = '%sinline%s.js' % (data_uri, quoted_docuri)
+            rules.setdefault('script-src', []).append(js_uri)
+            js_markup = '<script src="%s"></script>' % js_uri
+            inject_markup(resp, js_markup)
     policy = "default-src 'none'; " + lib.csp.generate_policy(rules)
     resp.headers['Content-Security-Policy'] = [policy]
