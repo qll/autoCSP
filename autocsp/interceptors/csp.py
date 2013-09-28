@@ -104,10 +104,10 @@ def inject_csp(resp):
     if REWRITE_INLINE:
         css = db.count("inline WHERE document_uri=? AND type LIKE 'css%'",
                        document_uri)
-        data_uri = '%s/%s/_/' % (lib.utils.assemble_origin(ORIGIN),
-                                 WEBINTERFACE_URI)
+        origin = lib.utils.assemble_origin(ORIGIN)
+        data_uri = '%s/%s/_/' % (origin, WEBINTERFACE_URI)
         if css:
-            css_uri = '%sinline%s.css' % (data_uri, quoted_docuri)
+            css_uri = '%s%sautoCSPinline.css' % (origin, resp.request.path)
             rules.setdefault('style-src', []).append(css_uri)
             css_markup = '<link rel="stylesheet" href="%s" />' % css_uri
             inject_markup(resp, css_markup)

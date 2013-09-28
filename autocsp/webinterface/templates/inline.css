@@ -1,4 +1,3 @@
 {{ styles|join }}
 {% for attr in attributes %}
-.autoCSP{{ attr.hash }} { {{ attr.source|safe }} }
-{% endfor %}
+.autoCSP{{ attr.hash }} { {{ attr.source|safe }} }{% endfor %}

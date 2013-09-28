@@ -1,3 +1,5 @@
+import re
+
 import lib.http
 import lib.webinterface
 
@@ -27,3 +29,14 @@ def handle_webinterface(req):
         response = lib.webinterface.call_view(req, '/' + '/'.join(path[1:]))
         req.reply(response.build(req))
         raise EventPropagationStop()
+
+
+@subscribe('request', mode='locked')
+def handle_inlinecss(req):
+    match = re.search(r'^(.*)autoCSPinline.css$', req.path)
+    if match:
+        response = lib.webinterface.call_view(req, '/_/inline%s.css' %
+                                                   match.group(1))
+        if response.content.strip():
+            req.reply(response.build(req))
+            raise EventPropagationStop()
