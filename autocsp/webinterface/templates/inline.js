@@ -15,11 +15,11 @@ var inlineScripts = null;
     var $s = window.$s;
 
     eventHandlers = { {% for e in events %}
-        '{{ e.hash }}': function() { {{ e.source }} },
+        '{{ e.hash }}': function() { {{ e.source|safe }} },
     {% endfor %} };
 
     inlineScripts = { {% for s in sources %}
-        '{{ s.hash }}': function() { {{ s.source }} },
+        '{{ s.hash }}': function() { {{ s.source|safe }} },
     {% endfor %} };
 })();
 
@@ -38,12 +38,12 @@ var addEventHandler = function(e) {
     /** Assign class to all Elements with inline event handlers. */
     for (var i = 0; i < e.attributes.length; i++) {
         var attr = e.attributes.item(i);
-        var match = attr.nodeName.match(/on([a-z]+)/i);
+        var match = attr.nodeName.match(/^on([a-z]+$)/i);
         if (match) {
             var toBeHashed = match[1] + ',' + attr.nodeValue.trim();
             var hash = CryptoJS.SHA256(toBeHashed).toString();
             if ($o.in(eventHandlers, hash)) {
-                e.removeAttribute(match[0]);
+                //e.removeAttribute(match[0]);
                 e[match[0]] = eventHandlers[hash];
                 if ($a.in(['load', 'error'], match[1])) {
                     // re-trigger events which could have already been fired

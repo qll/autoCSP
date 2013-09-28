@@ -177,10 +177,15 @@ def serve_inlinecss(req, document_uri):
     styles = [s[0] for s in
               db.select('SELECT source FROM inline WHERE document_uri = ? AND '
                         "type = 'css'", document_uri)]
-    attributes = [{'source': s, 'hash': h} for s, h in
-                  db.select('SELECT source, hash FROM inline WHERE '
-                            "document_uri = ? AND type = 'css-attr'",
-                            document_uri)]
+    attributes = []
+    query = ('SELECT source, hash FROM inline WHERE document_uri=? AND type='
+             "'css-attr'")
+    for s, h in db.select(query, document_uri):
+        # if no ; at the end set one (for adding !important)
+        if re.search(r'[^\s;]\s*$', s):
+            s += ';'
+        s = s.replace(';', ' !important;')
+        attributes.append({'source': s, 'hash': h})
     template = lib.webinterface.render_template('inline.css', styles=styles,
                                                 attributes=attributes)
     return wrap_static(template, '.css')
