@@ -4,6 +4,7 @@ from netlib.odict import ODictCaseless
 
 status_codes = {
     200: 'OK',
+    302: 'Found',
     400: 'Bad Request',
     401: 'Unauthorized',
     403: 'Forbidden',

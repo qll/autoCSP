@@ -66,6 +66,12 @@ class Http500Error(HttpError):
         HttpError.__init__(self, 500, msg)
 
 
+class Redirect(Response):
+    def __init__(self, location):
+        Response.__init__(self, status_code=302)
+        self.set_header('Location', location)
+
+
 class csp(object):
     """ Defines a CSP for a view. """
     def __init__(self, csp):
@@ -129,6 +135,31 @@ def wrap_response(val):
 def generate_token():
     """ Generates an unpredictable token or nonce. """
     return hashlib.sha256(os.urandom(32)).hexdigest()
+
+
+def csrf(func):
+    """ Decorator protecting a web ressource from CSRF. """
+    def wrapper(*args):
+        args = [i for i in args]
+        cookies = args[0].get_cookies()
+        if args[0].method == 'POST':
+            params = args[0].get_form_urlencoded()
+            if ('csrf' not in params or not cookies or not 'csrf' in cookies or
+                params['csrf'][0] != cookies['csrf'][0]):
+                # TODO(qll): invalidate CSRF token on failed attempts
+                raise Http400Error('Invalid CSRF token.')
+            cookies = None  # invalidate CSRF token
+        if cookies and 'csrf' in cookies:
+            token = cookies['csrf'][0]
+        else:
+            token = generate_token()
+        args.append(token)
+        response = func(*args)
+        if not cookies:
+            cookie = 'csrf=%s; Path=/%s/; HttpOnly' % (token, WEBINTERFACE_URI)
+            response.headers['Set-Cookie'] = cookie
+        return response
+    return wrapper
 
 
 def call_view(req, path):

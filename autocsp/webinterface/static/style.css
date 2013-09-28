@@ -195,3 +195,6 @@ div.warning {
 div.warning:last-child {
     margin: 0;
 }
+div.warning form {
+    display:inline;
+}
