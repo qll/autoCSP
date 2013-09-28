@@ -24,26 +24,48 @@
     </div>
 </section>
 {% endif %}
-<section>
-    <table class="datatable">
-        <thead>
-            <tr>
-                <td>Directive</td>
-                <td>URI</td>
-                <td>Activated</td>
-            </tr>
-        </thead>
-        <tbody>
-            {% for id, directive, uri, activated in rules %}
-                <tr{% if not activated %} class="inactive"{% endif %}>
-                    <td>{{ directive }}</td>
-                    <td>{{ uri }}</td>
-                    <td>
-                        <input type="checkbox" value="1"{% if activated %} checked{% endif %}>
-                    </td>
+{% if rules %}
+    <section>
+        <table class="datatable">
+            <thead>
+                <tr>
+                    <td>Directive</td>
+                    <td>URI</td>
+                    <td>Activated</td>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</section>
+            </thead>
+            <tbody>
+                {% for id, directive, uri, activated in rules %}
+                    <tr{% if not activated %} class="inactive"{% endif %}>
+                        <td>{{ directive }}</td>
+                        <td>{{ uri }}</td>
+                        <td>
+                            <input type="checkbox" value="1"{% if activated %} checked{% endif %}>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+{% endif %}
+{% if inline %}
+    <section>
+        <table class="datatable">
+            <thead>
+                <tr>
+                    <td>Inline type</td>
+                    <td>Source</td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in inline %}
+                    <tr>
+                        <td>{{ i.type }}</td>
+                        <td class="source">{{ i.source }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+{% endif %}
 {% endblock %}

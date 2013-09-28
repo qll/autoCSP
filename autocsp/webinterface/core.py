@@ -1,4 +1,6 @@
 """ Basic web interface. """
+import urllib
+
 import lib.csp
 import lib.utils
 import lib.webinterface
@@ -13,10 +15,19 @@ style = '%(autocsp)s/static/style.css'
 @lib.webinterface.path('/')
 def index(req):
     """ Displays the index website. """
-    query = ("SELECT document_uri FROM policy WHERE document_uri!='learn' GROUP"
-             ' BY document_uri')
-    uris = [uri[0] for uri in lib.utils.Globals()['db'].select(query)]
-    return lib.webinterface.make_response('index.html', uris=uris)
+    db = lib.utils.Globals()['db']
+    query = ('SELECT DISTINCT document_uri FROM policy WHERE document_uri!='
+             "'learn' UNION SELECT DISTINCT inline.document_uri FROM inline, "
+             'policy WHERE inline.document_uri!=policy.document_uri')
+    uris = [uri[0] for uri in db.select(query)]
+    c = db.fetch_one('SELECT COUNT(DISTINCT document_uri), COUNT(id) FROM '
+                     "policy WHERE document_uri!='learn'")
+    ci = db.fetch_one('SELECT COUNT(DISTINCT document_uri), COUNT(id) FROM '
+                      'inline')
+    overall_count = {'rules_uris': c[0], 'rules': c[1], 'inline_uris': ci[0],
+                     'inline': ci[1]}
+    return lib.webinterface.make_response('index.html', uris=uris,
+                                          count=overall_count)
 
 
 @lib.webinterface.csp({'style-src': [style]})
@@ -43,7 +54,10 @@ def display_policy(req, csrf_token):
         if active:
             rules.setdefault(directive, []).append(src)
         fullrules.append([id, directive, src, active])
-    if len(rules) == 0:
+    inline = [{'type': t, 'source': s} for t, s in
+              db.select('SELECT type, source FROM inline WHERE document_uri=?',
+                        uri)]
+    if len(rules) == 0 and len(inline) == 0:
         raise lib.webinterface.Http404Error()
     warnings = [{'id': i, 'text': t} for i, t in
                 db.select('SELECT id, text FROM warnings WHERE document_uri=?',
@@ -51,7 +65,7 @@ def display_policy(req, csrf_token):
     return lib.webinterface.make_response('policy.html', document_uri=uri,
                                           rules=fullrules, warnings=warnings,
                                           policy=lib.csp.generate_policy(rules),
-                                          csrf=csrf_token)
+                                          csrf=csrf_token, inline=inline)
 
 
 @lib.webinterface.path('/warning/delete')
@@ -68,7 +82,7 @@ def delete_warning(req, csrf_token):
         raise lib.webinterface.Http404Error()
     db.execute('DELETE FROM warnings WHERE id=?', data['id'][0])
     return lib.webinterface.Redirect('/%s/policy?uri=%s' % (WEBINTERFACE_URI,
-                                                            document_uri))
+                                     urllib.quote(document_uri)))
 
 
 @lib.webinterface.csp({'style-src': [style]})

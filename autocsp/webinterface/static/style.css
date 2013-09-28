@@ -198,3 +198,6 @@ div.warning:last-child {
 div.warning form {
     display:inline;
 }
+.source {
+    font-family:monospace;
+}
