@@ -157,7 +157,7 @@ def serve_inlinejs(req, document_uri):
     """ Serves the inline.js script handling inline styles in locked mode. """
     check_referer(req.headers, document_uri)
     db = lib.utils.Globals()['db']
-    events = [{'source': s.split(',', 1)[1], 'hash': h} for s, h in
+    events = [{'source': s.split(',', 2)[2], 'hash': h} for s, h in
               db.select('SELECT source, hash FROM inline WHERE document_uri=? '
                         "AND type='js-event'", document_uri)]
     sources = [{'source': s, 'hash': h} for s, h in

@@ -17,7 +17,9 @@ var visit = null;
             var attr = e.attributes.item(i);
             var match = attr.nodeName.match(/^on([a-z]+$)/i);
             if (match && !$.empty(attr.nodeValue.trim())) {
-                eventHandlers.push(match[1] + ',' + attr.nodeValue.trim());
+                var handler = [match[1], $.getNodePath(e),
+                               attr.nodeValue.trim()];
+                eventHandlers.push(handler.join(','));
             }
         }
         return eventHandlers;

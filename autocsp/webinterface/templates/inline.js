@@ -40,8 +40,9 @@ var addEventHandler = function(e) {
         var attr = e.attributes.item(i);
         var match = attr.nodeName.match(/^on([a-z]+$)/i);
         if (match) {
-            var toBeHashed = match[1] + ',' + attr.nodeValue.trim();
-            var hash = CryptoJS.SHA256(toBeHashed).toString();
+            var handlerProps = [match[1], $.getNodePath(e),
+                                attr.nodeValue.trim()];
+            var hash = CryptoJS.SHA256(handlerProps.join(',')).toString();
             if ($o.in(eventHandlers, hash)) {
                 var handler = eventHandlers[hash];
                 handler = handler.bind(e);

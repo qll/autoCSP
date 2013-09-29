@@ -91,6 +91,16 @@ var $ = {
                 proto.mozMatchesSelector;
         return m.call(node, selector);
     },
+    getNodePath: function(e) {
+        /** Returns complete path to and from node separated by /. */
+        var node = e;
+        var path = [];
+        while (node) {
+            path.push(node.nodeName);
+            node = node.parentNode;
+        }
+        return path.join('/');
+    },
 };
 
 
