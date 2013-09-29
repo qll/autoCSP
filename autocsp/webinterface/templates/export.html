@@ -1,10 +1,19 @@
 {% extends 'layout.html' %}
-{% block title %}Export CSPs{% endblock %}
+{% block title %}Export{% endblock %}
 {% block content %}
 <section>
-    <h3>Export...</h3>
+    <h3>Export options</h3>
     <div>
-        ...will be here.
+        <form action="{{ base_url }}export" method="post">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <label for="id-type">
+                Export type
+            </label>
+            <select name="type" id="id-type">
+                <option value="CSV">CSV</option>
+            </select><br>
+            <input type="submit" value="export">
+        </form>
     </div>
 </section>
 {% endblock %}

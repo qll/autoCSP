@@ -98,10 +98,25 @@ def set_status(req, csrf_token):
     active = data['active'][0]
     id = data['id'][0]
     db.execute('UPDATE policy SET activated=? WHERE id=?', (active, id))
-    return lib.http.Response(content=csrf_token)
+    lib.http.Response(content=csrf_token)
 
 
 @lib.webinterface.csp({'style-src': [style]})
 @lib.webinterface.path('/export')
-def export(req):
-    return lib.webinterface.make_response('export.html')
+@lib.webinterface.csrf
+def export(req, csrf_token):
+    if req.method == 'POST':
+        param = req.get_form_urlencoded()
+        if 'type' not in param or param['type'][0] not in ('CSV',):
+            raise lib.webinterface.Http400Error()
+        db = lib.utils.Globals()['db']
+        # XXX
+        data = [a.replace(',', '\\,') + ',' + b + ',' + c.replace(',', '\\,')
+                for a, b, c in
+                db.select('SELECT document_uri, directive, uri FROM policy '
+                          "WHERE activated=1 AND document_uri!='learn'")]
+        r = lib.http.Response(content='\n'.join(data))
+        r.set_header('Content-Type', 'text/plain; charset=UTF-8')
+        r.set_header('Content-Disposition', 'attachment; filename=autoCSP.csv')
+        return r
+    return lib.webinterface.make_response('export.html', csrf=csrf_token)
