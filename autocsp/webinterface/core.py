@@ -2,6 +2,7 @@
 import urllib
 
 import lib.csp
+import lib.http
 import lib.utils
 import lib.webinterface
 
@@ -36,7 +37,9 @@ def locked_index(req):
     return lib.webinterface.make_response('locked_index.html')
 
 
-@lib.webinterface.csp({'style-src': [style]})
+@lib.webinterface.csp({'style-src': [style],
+                       'script-src': ['%(autocsp)s/static/policy.js'],
+                       'connect-src': ['%(autocsp)s/rule/active']})
 @lib.webinterface.path('/policy')
 @lib.webinterface.csrf
 def display_policy(req, csrf_token):
@@ -83,6 +86,19 @@ def delete_warning(req, csrf_token):
     db.execute('DELETE FROM warnings WHERE id=?', data['id'][0])
     return lib.webinterface.Redirect('/%s/policy?uri=%s' % (WEBINTERFACE_URI,
                                      urllib.quote(document_uri)))
+
+
+@lib.webinterface.path('/rule/active')
+@lib.webinterface.csrf
+def set_status(req, csrf_token):
+    data = req.get_form_urlencoded()
+    if 'id' not in data or 'active' not in data:
+        raise lib.webinterface.Http400Error()
+    db = lib.utils.Globals()['db']
+    active = data['active'][0]
+    id = data['id'][0]
+    db.execute('UPDATE policy SET activated=? WHERE id=?', (active, id))
+    return lib.http.Response(content=csrf_token)
 
 
 @lib.webinterface.csp({'style-src': [style]})
