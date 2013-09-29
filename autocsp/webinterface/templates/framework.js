@@ -1,5 +1,4 @@
 (function() {
-'use strict';
 
 
 var request_id = '';

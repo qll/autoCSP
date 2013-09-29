@@ -15,7 +15,7 @@ var inlineScripts = null;
     var $s = window.$s;
 
     eventHandlers = { {% for e in events %}
-        '{{ e.hash }}': function() { {{ e.source|safe }} },
+        '{{ e.hash }}': function() { with(this) { {{ e.source|safe }} } },
     {% endfor %} };
 
     inlineScripts = { {% for s in sources %}
@@ -43,8 +43,9 @@ var addEventHandler = function(e) {
             var toBeHashed = match[1] + ',' + attr.nodeValue.trim();
             var hash = CryptoJS.SHA256(toBeHashed).toString();
             if ($o.in(eventHandlers, hash)) {
-                //e.removeAttribute(match[0]);
-                e[match[0]] = eventHandlers[hash];
+                var handler = eventHandlers[hash];
+                handler = handler.bind(e);
+                e[match[0]] = handler;
                 if ($a.in(['load', 'error'], match[1])) {
                     // re-trigger events which could have already been fired
                     var prop = (e.tagName == 'LINK') ? 'href' : 'src';
