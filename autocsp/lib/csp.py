@@ -3,8 +3,8 @@ import lib.utils
 from settings import ORIGIN
 
 
-directives = ('connect-src', 'font-src', 'form-action', 'frame-src', 'img-src',
-              'media-src', 'object-src', 'script-src', 'style-src')
+directives = ('base-uri', 'connect-src', 'font-src', 'form-action', 'frame-src',
+              'img-src', 'media-src', 'object-src', 'script-src', 'style-src')
 
 
 def generate_policy(rules):

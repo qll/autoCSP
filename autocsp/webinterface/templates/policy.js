@@ -17,6 +17,9 @@ var visit = null;
     var getSrc = function(e) {
         return sanitizeUri(e.src);
     };
+    var getBaseUri = function(e) {
+        return sanitizeUri(e.href);
+    };
     var getAppletAttr = function(e) {
         var uris = [];
         $a.forEach(['code', 'archive', 'codebase'], function(prop) {
@@ -102,6 +105,7 @@ var visit = null;
         '*': {'img-src': getBackgroundImage},
         'APPLET': {'object-src': getAppletAttr},
         'AUDIO': {'media-src': getSrc},
+        'BASE': {'base-uri': getBaseUri},
         'BUTTON': {'form-action': getButtonFormAction},
         'EMBED': {'object-src': getSrc},
         'FORM': {'form-action': getFormAction},

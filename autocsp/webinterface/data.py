@@ -199,8 +199,9 @@ def serve_learningjs(req):
     known_hashes = ["'%s'" % h[0] for h in
                     db.select('SELECT hash FROM inline WHERE document_uri = ?',
                               document_uri)]
-    report_uri = '/%s/_/policy' % WEBINTERFACE_URI
-    ext_uri = '/%s/_/externalize' % WEBINTERFACE_URI
+    origin = lib.utils.assemble_origin(ORIGIN)
+    report_uri = '%s/%s/_/policy' % (origin, WEBINTERFACE_URI)
+    ext_uri = '%s/%s/_/externalize' % (origin, WEBINTERFACE_URI)
     scripts = (lib.webinterface.render_template('policy.js',
                                                 report_uri=report_uri),
                lib.webinterface.render_template('externalize.js',
