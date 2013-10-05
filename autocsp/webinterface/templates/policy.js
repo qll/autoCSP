@@ -45,6 +45,12 @@ var visit = null;
         }
         return getSrc(e);
     };
+    var getFormAction = function(e) {
+        return sanitizeUri(e.action);
+    };
+    var getButtonFormAction = function(e) {
+        return sanitizeUri(e.formAction);
+    };
     var getObjectData = function(e) {
         return sanitizeUri(e.data);
     };
@@ -96,10 +102,13 @@ var visit = null;
         '*': {'img-src': getBackgroundImage},
         'APPLET': {'object-src': getAppletAttr},
         'AUDIO': {'media-src': getSrc},
+        'BUTTON': {'form-action': getButtonFormAction},
         'EMBED': {'object-src': getSrc},
+        'FORM': {'form-action': getFormAction},
         'FRAME': {'frame-src': getFrameSrc},
         'IFRAME': {'frame-src': getFrameSrc},
         'IMG': {'img-src': getSrc},
+        'INPUT': {'form-action': getButtonFormAction},
         'LINK': {'img-src': getIcon, 'style-src': checkStyles},
         'OBJECT': {'object-src': getObjectData},
         'SCRIPT': {'script-src': getSrc},
