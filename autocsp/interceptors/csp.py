@@ -74,7 +74,7 @@ def inject_markup(resp, markup):
 def inject_script(resp, id):
     """ Injects a script into every served HTML page (policy generation). """
     if 'Content-Type' in resp.headers:
-        if re.match('\s*(text/html|application/xhtml\+xml)*.',
+        if re.match('^\s*(text\/html|application\/xhtml\+xml)*.$',
                     ''.join(resp.headers['Content-Type'])):
             doc_uri = urllib.quote(resp.request.path)
             inj = ('<script src="/%s/_/learning.js?document_uri=%s" '
