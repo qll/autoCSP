@@ -24,14 +24,21 @@ var visit = null;
         }
         return eventHandlers;
     };
+    var getJsLink = function(e) {
+        var uri = e.href;
+        if ($s.startsWith(uri, 'javascript:')) {
+            return $.getNodePath(e) + ',' + uri.slice('javascript:'.length);
+        }
+    };
     var getInlineScript = function(e) {
         if (!e.hasAttribute('src')) {
             return e.innerText.trim();
         }
-    }
+    };
 
     visit = {
         '*': {'css-attr': getStyleAttribute, 'js-event': getEventHandlers},
+        'A': {'js-link': getJsLink},
         'SCRIPT': {'js': getInlineScript},
         'STYLE': {'css': function(e) { return e.innerText.trim(); }},
     };

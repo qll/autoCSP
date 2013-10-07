@@ -76,7 +76,6 @@ def inject_script(resp, id):
     if 'Content-Type' in resp.headers:
         if re.search('^\s*(text\/html|application\/xhtml\+xml).*$',
                      ''.join(resp.headers['Content-Type'])):
-            print('inj')
             doc_uri = urllib.quote(resp.request.path)
             inj = ('<script src="/%s/_/learning.js?document_uri=%s" '
                    'data-id="%s"></script>' % (WEBINTERFACE_URI, doc_uri, id))

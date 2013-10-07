@@ -1,7 +1,6 @@
 (function() {
 
 
-var PREFIX = 'autoCSP';
 var eventHandlers = null;
 var inlineScripts = null;
 
@@ -21,76 +20,92 @@ var inlineScripts = null;
     inlineScripts = { {% for s in sources %}
         '{{ s.hash }}': function() { {{ s.source|safe }} },
     {% endfor %} };
+
+    jsLinks = { {% for l in links %}
+        '{{ l.hash }}': function() { {{ l.source|safe }} },
+    {% endfor %} };
 })();
 
 
-var addStyleAttrClass = function(node) {
-    /** Assign class to all Elements with inline style attributes. */
-    if (!node.hasAttribute('style')) {
-        return;
-    }
-    var hash = CryptoJS.SHA256(node.getAttribute('style').trim()).toString();
-    node.classList.add(PREFIX + hash);
-}
+var PREFIX = 'autoCSP';
 
 
-var addEventHandler = function(e) {
-    /** Assign class to all Elements with inline event handlers. */
-    for (var i = 0; i < e.attributes.length; i++) {
-        var attr = e.attributes.item(i);
-        var match = attr.nodeName.match(/^on([a-z]+$)/i);
-        if (match) {
-            var handlerProps = [match[1], $.getNodePath(e),
-                                attr.nodeValue.trim()];
-            var hash = CryptoJS.SHA256(handlerProps.join(',')).toString();
-            if ($o.in(eventHandlers, hash)) {
-                var handler = eventHandlers[hash];
-                handler = handler.bind(e);
-                e[match[0]] = handler;
-                if ($a.in(['load', 'error'], match[1])) {
-                    // re-trigger events which could have already been fired
-                    var prop = (e.tagName == 'LINK') ? 'href' : 'src';
-                    var old = e[prop];
-                    e[prop] = '';
-                    e[prop] = old;
+
+
+
+
+var visit = null;
+
+
+(function() {
+    var executeInlineScript = function(e) {
+        var hash = CryptoJS.SHA256(e.innerText.trim()).toString();
+        if ($o.in(inlineScripts, hash)) {
+            inlineScripts[hash]();
+        }
+    };
+    var addEventHandler = function(e) {
+        /** Assign class to all Elements with inline event handlers. */
+        for (var i = 0; i < e.attributes.length; i++) {
+            var attr = e.attributes.item(i);
+            var match = attr.nodeName.match(/^on([a-z]+$)/i);
+            if (match) {
+                var handlerProps = [match[1], $.getNodePath(e),
+                                    attr.nodeValue.trim()];
+                var hash = CryptoJS.SHA256(handlerProps.join(',')).toString();
+                if ($o.in(eventHandlers, hash)) {
+                    var handler = eventHandlers[hash];
+                    handler = handler.bind(e);
+                    e[match[0]] = handler;
+                    if ($a.in(['load', 'error'], match[1])) {
+                        // re-trigger events which could have already been fired
+                        var prop = (e.tagName == 'LINK') ? 'href' : 'src';
+                        var old = e[prop];
+                        e[prop] = '';
+                        e[prop] = old;
+                    }
                 }
             }
         }
-    }
-}
+    };
+    var addClickEvent = function(e) {
+        var prot = 'javascript:';
+        if ($s.startsWith(e.href, prot)) {
+            var hashProperties = [$.getNodePath(e), e.href.slice(prot.length)];
+            var hash = CryptoJS.SHA256(hashProperties.join(',')).toString();
+            if ($o.in(jsLinks, hash)) {
+                var handler = jsLinks[hash];
+                e.onclick = handler;
+            }
+        }
+    };
+    var addStyleAttrClass = function(e) {
+        /** Assign class to all Elements with inline style attributes. */
+        if (!e.hasAttribute('style')) {
+            return;
+        }
+        var hash = CryptoJS.SHA256(e.getAttribute('style').trim()).toString();
+        e.classList.add(PREFIX + hash);
+    };
 
+    visit = {
+        '*': {'js-event': addEventHandler, 'css-attr': addStyleAttrClass},
+        'A': {'js-link': addClickEvent},
+        'SCRIPT': {'js': executeInlineScript},
+    };
 
-var executeInlineScript = function(e) {
-    if (e.tagName !== 'SCRIPT') {
-        return;
-    }
-    var hash = CryptoJS.SHA256(e.innerText.trim()).toString();
-    if ($o.in(inlineScripts, hash)) {
-        inlineScripts[hash]();
-    }
-};
+})();
 
 
 window.addEventListener('DOMContentLoaded', function() {
-    $a.forEach(document.getElementsByTagName('*'), function(e) {
-        if (!e.tagName) {
-            return;
-        }
-        addStyleAttrClass(e);
-        addEventHandler(e);
-        executeInlineScript(e);
-    });
+    var caller = function(_, externalizer, node) {
+        externalizer(node);
+    };
+    $.visitNodes(document.getElementsByTagName('*'), visit, caller);
 
     var observer = new MutationObserver(function(mutations) {
         $a.forEach(mutations, function(mutation) {
-            $a.forEach(mutation.addedNodes, function(node) {
-                if (!node.tagName) {
-                    return;
-                }
-                addStyleAttrClass(node);
-                addEventHandler(node);
-                executeInlineScript(e);
-            });
+            $.visitNodes(mutation.addedNodes, visit, caller);
         });
     });
     observer.observe(document.body.parentNode,
@@ -99,11 +114,10 @@ window.addEventListener('DOMContentLoaded', function() {
     var setAttribute = Element.prototype.setAttribute;
     var setAttributeReplacement = function(attr, value) {
         setAttribute.call(this, attr, value);
-        if (attr === 'style') {
-            addStyleAttrClass(this);
-        } else if (attr.match(/^on[a-z]+$/i)) {
-            addEventHandler(this);
-        }
+        var node = this;
+        $a.forEach(visit['*'], function(func) {
+            func(this);
+        });
     };
     Object.defineProperty(Element.prototype, 'setAttribute',
                           {value: setAttributeReplacement});

@@ -160,11 +160,15 @@ def serve_inlinejs(req, document_uri):
     events = [{'source': s.split(',', 2)[2], 'hash': h} for s, h in
               db.select('SELECT source, hash FROM inline WHERE document_uri=? '
                         "AND type='js-event'", document_uri)]
+    links = [{'source': s.split(',', 1)[1], 'hash': h} for s, h in
+              db.select('SELECT source, hash FROM inline WHERE document_uri=? '
+                        "AND type='js-link'", document_uri)]
     sources = [{'source': s, 'hash': h} for s, h in
                db.select('SELECT source, hash FROM inline WHERE document_uri=? '
                          "AND type='js'", document_uri)]
     inlinejs = lib.webinterface.render_template('inline.js', events=events,
-                                                             sources=sources)
+                                                             sources=sources,
+                                                             links=links)
     return serve_scripts((inlinejs,))
 
 
@@ -219,7 +223,7 @@ def save_inline(req):
     db = lib.utils.Globals()['db']
     inline = json.loads(data['data'])
     for type, sources in inline.items():
-        if type not in ('css', 'css-attr', 'js', 'js-event'):
+        if type not in ('css', 'css-attr', 'js', 'js-event', 'js-link'):
             continue
         for source in sources:
             hash = hashlib.sha256(source).hexdigest()

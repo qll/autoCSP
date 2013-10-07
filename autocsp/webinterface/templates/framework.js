@@ -55,12 +55,26 @@ var $ = {
         $n.post(report_uri, {'id': request_id, 'uri': document_uri,
                              'data': data});
     },
+    visitNodes: function(nodes, visit, cb) {
+        var node = null;
+        var wrappedCb = function(directive, getter) {
+            cb(directive, getter, node);
+        };
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].tagName) {
+                node = nodes[i];
+                $o.forEach(visit['*'], wrappedCb);
+                if ($o.in(visit, node.tagName)) {
+                    $o.forEach(visit[node.tagName], wrappedCb);
+                }
+            }
+        }
+    },
     processNodes: function(nodes, visit, checkfunc) {
         /** Visits all nodes and builds a list of visit return values. */
         var data = {};
         var checkfunc = checkfunc || function() { return true; };
-        var node = null;
-        var store_in_data = function(directive, getter) {
+        var store_in_data = function(directive, getter, node) {
             var value = getter(node);
             var isArray = value && value.constructor === Array;
             if (isArray) {
@@ -73,15 +87,7 @@ var $ = {
                 }
             }
         };
-        for (var i = 0; i < nodes.length; i++) {
-            if (nodes[i].tagName) {
-                node = nodes[i];
-                $o.forEach(visit['*'], store_in_data);
-                if ($o.in(visit, node.tagName)) {
-                    $o.forEach(visit[node.tagName], store_in_data);
-                }
-            }
-        }
+        $.visitNodes(nodes, visit, store_in_data);
         return data;
     },
     matchesSelector: function(node, selector) {
