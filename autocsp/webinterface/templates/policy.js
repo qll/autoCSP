@@ -6,14 +6,27 @@
 var visit = null;
 
 
+var sanitizeUri = function(uri) {
+    /** Nullifies data- and Same-Origin-URIs. */
+    return ($.empty(uri) || $s.startsWith(uri, 'data:') ||
+            $s.startsWith(uri, location.origin)) ? null : uri;
+};
+
+
+var xhrOpen = window.XMLHttpRequest.prototype.open;
+var newOpen = function() {
+    var uri = sanitizeUri(arguments[1]);
+    if (uri) {
+        $.sendToBackend({'connect-src': [uri]}, '{{ report_uri }}');
+    }
+    xhrOpen.apply(this, arguments);
+};
+Object.defineProperty(window.XMLHttpRequest.prototype, 'open',
+                      {configurable: false, value: newOpen});
+
+
 /** Contains all functions used to extract sources. **/
 (function() {
-    var sanitizeUri = function(uri) {
-        /** Nullifies data- and Same-Origin-URIs. */
-        return ($.empty(uri) || $s.startsWith(uri, 'data:') ||
-                $s.startsWith(uri, location.origin)) ? null : uri;
-    };
-
     var getSrc = function(e) {
         return sanitizeUri(e.src);
     };

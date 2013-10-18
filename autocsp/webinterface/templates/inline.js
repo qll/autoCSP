@@ -28,12 +28,6 @@ var inlineScripts = null;
 
 
 var PREFIX = 'autoCSP';
-
-
-
-
-
-
 var visit = null;
 
 
@@ -93,7 +87,6 @@ var visit = null;
         'A': {'js-link': addClickEvent},
         'SCRIPT': {'js': executeInlineScript},
     };
-
 })();
 
 
