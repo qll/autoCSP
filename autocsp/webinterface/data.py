@@ -52,7 +52,7 @@ def refine_policy(req):
             for uri in uris:
                 if not db.count('policy WHERE document_uri = ? AND directive = '
                                 '? AND uri = ?', (data['uri'], directive, uri)):
-                    ext_origin = re.match('(^https?://[^/]+)', uri,
+                    ext_origin = re.match('(^(?:http|ws)s?://[^/]+)', uri,
                                           re.I).group(1)
                     uri = strip_query(uri, data['uri'], db)
                     # set unspecific rule to not activated ... there has to be one

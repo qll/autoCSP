@@ -13,6 +13,7 @@ var sanitizeUri = function(uri) {
 };
 
 
+/** Overwrite JS APIs for connect-src. */
 var xhrOpen = window.XMLHttpRequest.prototype.open;
 var newOpen = function() {
     var uri = sanitizeUri(arguments[1]);
@@ -23,6 +24,15 @@ var newOpen = function() {
 };
 Object.defineProperty(window.XMLHttpRequest.prototype, 'open',
                       {configurable: false, value: newOpen});
+var wsConstructor = window.WebSocket;
+window.WebSocket = function(uri, protocols) {
+    var connect_uri = sanitizeUri(uri);
+    if (connect_uri) {
+        $.sendToBackend({'connect-src': [connect_uri]}, '{{ report_uri }}');
+    }
+    return new wsConstructor(uri, protocols);
+};
+window.WebSocket.prototype = wsConstructor;
 
 
 /** Contains all functions used to extract sources. **/
