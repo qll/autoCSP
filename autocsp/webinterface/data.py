@@ -149,6 +149,8 @@ def check_referer(headers, document_uri):
     referer = headers['Referer'][0]
     origin = lib.utils.assemble_origin(ORIGIN)
     if referer != origin + document_uri:
+        if '?' in referer and referer.split('?', 1)[0] == origin + document_uri:
+            return
         raise lib.webinterface.Http403Error()
 
 
