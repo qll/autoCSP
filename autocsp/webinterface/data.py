@@ -192,7 +192,8 @@ def serve_inlinecss(req, document_uri):
             s += ';'
         s = s.replace(';', ' !important;')
         attributes.append({'source': s, 'hash': h})
-    template = lib.webinterface.render_template('inline.css', styles=styles,
+    template = lib.webinterface.render_template('inline.css',
+                                                styles='\n'.join(styles),
                                                 attributes=attributes)
     return wrap_static(template, '.css')
 
