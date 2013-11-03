@@ -16,7 +16,7 @@ var sanitizeUri = function(uri) {
 /** Overwrite JS APIs for connect-src. */
 var xhrOpen = window.XMLHttpRequest.prototype.open;
 var newOpen = function() {
-    var uri = sanitizeUri(arguments[1]);
+    var uri = sanitizeUri($.toAbsoluteUri(arguments[1]));
     if (uri) {
         $.sendToBackend({'connect-src': [uri]}, '{{ report_uri }}');
     }
