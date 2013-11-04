@@ -119,6 +119,9 @@ def inject_csp(resp):
             rules.setdefault('script-src', []).append(js_uri)
             js_markup = '<script src="%s"></script>' % js_uri
             inject_markup(resp, js_markup)
+        if js:
+            extjs_uri = '%sexternalized%s.js' % (data_uri, quoted_docuri)
+            rules.setdefault('script-src', []).append(extjs_uri)
     if not rules and '?' in document_uri:
         resp.request.path = document_uri.split('?', 1)[0]
         inject_csp(resp)

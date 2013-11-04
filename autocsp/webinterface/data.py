@@ -165,13 +165,29 @@ def serve_inlinejs(req, document_uri):
     links = [{'source': s.split(',', 1)[1], 'hash': h} for s, h in
               db.select('SELECT source, hash FROM inline WHERE document_uri=? '
                         "AND type='js-link'", document_uri)]
-    sources = [{'source': s, 'hash': h} for s, h in
-               db.select('SELECT source, hash FROM inline WHERE document_uri=? '
+    sources = [{'id': i, 'hash': h} for i, h in
+               db.select('SELECT id, hash FROM inline WHERE document_uri=? '
                          "AND type='js'", document_uri)]
+    extjs_uri = '/%s/_/externalized%s.js' % (WEBINTERFACE_URI, document_uri)
     inlinejs = lib.webinterface.render_template('inline.js', events=events,
-                                                             sources=sources,
-                                                             links=links)
+                                                sources=sources, links=links,
+                                                extjs_uri=extjs_uri)
     return serve_scripts((inlinejs,))
+
+
+@lib.webinterface.path('/_/externalized(/.*).js', mode='locked')
+def serve_externalized_script(req, document_uri):
+    check_referer(req.headers, document_uri)
+    params = req.get_query()
+    if 'id' not in params:
+        raise lib.webinterface.Http400Error()
+    id = params['id'][0]
+    db = lib.utils.Globals()['db']
+    source = db.fetch_one('SELECT source FROM inline WHERE document_uri=? AND '
+                          'id=?', (document_uri, id))
+    if not source:
+        raise lib.webinterface.Http404Error()
+    return wrap_static(source[0], '.js')
 
 
 @lib.webinterface.path('/_/inline(/.*).css', mode='locked')

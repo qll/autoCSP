@@ -18,7 +18,7 @@ var inlineScripts = null;
     {% endfor %} };
 
     inlineScripts = { {% for s in sources %}
-        '{{ s.hash }}': function() { {{ s.source|safe }} },
+        '{{ s.hash }}': {{ s.id }},
     {% endfor %} };
 
     jsLinks = { {% for l in links %}
@@ -35,7 +35,9 @@ var visit = null;
     var executeInlineScript = function(e) {
         var hash = CryptoJS.SHA256(e.innerText.trim()).toString();
         if ($o.in(inlineScripts, hash)) {
-            inlineScripts[hash]();
+            var script = document.createElement('script');
+            script.src = '{{ extjs_uri }}?id=' + inlineScripts[hash];
+            document.body.appendChild(script);
         }
     };
     var addEventHandler = function(e) {
