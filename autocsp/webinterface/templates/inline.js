@@ -118,4 +118,26 @@ window.addEventListener('DOMContentLoaded', function() {
                           {value: setAttributeReplacement});
 });
 
+
+(function() {
+    var evalConstructs = ['eval', 'Function', 'setTimeout', 'setInterval'];
+    var intercept = function(funcName) {
+        var orig = window[funcName];
+        Object.defineProperty(window, funcName, {value: function(s, a) {
+            if (s.constructor === String) {
+                var is_json = !(/[^,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]/.test(
+                                s.replace(/"(\\.|[^"\\])*"/g, '')))
+                if (is_json) {
+                    return JSON.parse(s);
+                }
+            }
+            orig(s, a);
+        }, configurable: false});
+    }
+    for (var c in evalConstructs) {
+        intercept(evalConstructs[c]);
+    }
+})();
+
+
 })();

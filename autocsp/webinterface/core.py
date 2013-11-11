@@ -39,7 +39,8 @@ def locked_index(req):
 
 @lib.webinterface.csp({'style-src': [style],
                        'script-src': ['%(autocsp)s/static/policy.js'],
-                       'connect-src': ['%(autocsp)s/rule/active']})
+                       'connect-src': ['%(autocsp)s/rule/active'],
+                       'form-action': ['%(autocsp)s/warning/delete']})
 @lib.webinterface.path('/policy')
 @lib.webinterface.csrf
 def display_policy(req, csrf_token):
