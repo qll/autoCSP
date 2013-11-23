@@ -46,4 +46,11 @@ Abstract
 Is this proxy useful for me?
 ============================
 Depends on many factors. If you have a high profile site, probably no. It was
-not built with performance in mind but is merely a proof of concept.
+not built with performance in mind and is merely a proof of concept. You may use
+any idea of the thesis or this proxy and implement it in your
+framework/product/foo. If you feel adventurous, you might try and use it on your
+site (it only supports Chrome right now). I might even help you, but I
+personally think that the ideas and concepts will be more useful when
+incorporated in a framework to aid developers. I will look into such projects
+very soon.
+
