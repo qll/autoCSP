@@ -43,7 +43,7 @@ Abstract
 > calls to eval-like constructs. Overall, it allows web applications to adopt
 > CSP without any changes to server-side code.
 
-[Read the full thesis.](http://nicolas.golubovic.net/thesis/bachelor.pdf)
+[Read the full thesis.](https://golubovic.net/thesis/bachelor.pdf)
 
 
 Is this proxy useful for me?
