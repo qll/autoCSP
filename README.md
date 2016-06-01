@@ -13,6 +13,9 @@ dynamically changing inline code cannot be securely rewritten. Furthermore, the
 rewriting of eval-like constructs is only rudimentary and will only be able to
 rewrite them in the case they are used to parse JSON.
 
+**This project is not maintained and is merely a proof of concept.**
+
+
 Abstract
 ========
 > As the Internet gains wide adoption, the World Wide Web becomes one of the
